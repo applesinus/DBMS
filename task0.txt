@@ -1,0 +1,21 @@
+createPool pool
+createScheme scheme in pool
+createCollection collection in pool.scheme
+
+set thisYear 2024 in pool.scheme.collection
+set lastYear 2023 in pool.scheme.collection
+set justYear 2010 in pool.scheme.collection
+update justYear 2011 in pool.scheme.collection
+
+get thisYear in pool.scheme.collection
+getRange l t in pool.scheme.collection
+
+delete thisYear in pool.scheme.collection
+delete lastYear in pool.scheme.collection
+delete justYear in pool.scheme.collection
+
+deleteCollection collection in pool.scheme
+deleteScheme scheme in pool
+deletePool pool
+
+exit
