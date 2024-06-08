@@ -8,7 +8,22 @@ import (
 	"strings"
 )
 
-func executeCommand(command string) string {
+// database - basic database interface
+type database interface {
+	CreatePool(settings map[string]string, name string) string
+	DeletePool(settings map[string]string, name string) string
+	CreateSchema(settings map[string]string, name string, pool string) string
+	DeleteSchema(settings map[string]string, name string, pool string) string
+	CreateCollection(settings map[string]string, name string, pool string, schema string) string
+	DeleteCollection(settings map[string]string, name string, pool string, schema string) string
+	Set(settings map[string]string, key string, value []string, pool string, schema string, collection string) string
+	Update(settings map[string]string, key string, value []string, pool string, schema string, collection string) string
+	Get(settings map[string]string, key string, pool string, schema string, collection string) (string, string)
+	GetRange(settings map[string]string, leftBound string, rightBound string, pool string, schema string, collection string) (map[string]string, string)
+	Delete(settings map[string]string, key string, pool string, schema string, collection string) string
+}
+
+func executeCommand(db database, settings map[string]string, command string) string {
 	words := strings.Fields(command)
 	switch len(words) {
 	// Empty line
@@ -26,7 +41,7 @@ func executeCommand(command string) string {
 		default:
 			_, err := os.Open(words[0])
 			if err == nil {
-				ret := executeFile(words[0])
+				ret := executeFile(db, settings, words[0])
 				if ret == "error" {
 					fmt.Println("Could not execute file")
 				} else {
@@ -50,16 +65,16 @@ func executeCommand(command string) string {
 			name := words[1]
 
 			if strings.ToLower(words[0]) == "createpool" {
-				return task0.CreatePool(name)
+				return db.CreatePool(settings, name)
 			} else if strings.ToLower(words[0]) == "deletepool" {
-				return task0.DeletePool(name)
+				return db.DeletePool(settings, name)
 			}
 
 			fmt.Println("Wrong command")
 			return "error"
 
-		// Create and Delete Scheme
-		case "createscheme", "deletescheme":
+		// Create and Delete Schema
+		case "createschema", "deleteschema":
 			if len(words) > 4 {
 				fmt.Println("Too many arguments")
 				return "error"
@@ -67,15 +82,15 @@ func executeCommand(command string) string {
 
 			name := words[1]
 			if words[2] != "in" {
-				fmt.Println("Wrong command on scheme name declaration")
+				fmt.Println("Wrong command on schema name declaration")
 				return "error"
 			}
 			poolName := words[3]
 
-			if strings.ToLower(words[0]) == "deletescheme" {
-				return task0.DeleteScheme(name, poolName)
-			} else if strings.ToLower(words[0]) == "createscheme" {
-				return task0.CreateScheme(name, poolName)
+			if strings.ToLower(words[0]) == "deleteschema" {
+				return db.DeleteSchema(settings, name, poolName)
+			} else if strings.ToLower(words[0]) == "createschema" {
+				return db.CreateSchema(settings, name, poolName)
 			}
 
 			fmt.Println("Wrong command")
@@ -93,21 +108,21 @@ func executeCommand(command string) string {
 
 			name := words[1]
 			if words[2] != "in" {
-				fmt.Println("Wrong command on scheme name declaration")
+				fmt.Println("Wrong command on schema name declaration")
 				return "error"
 			}
-			schemeAndPool := strings.Split(words[3], ".")
-			if len(schemeAndPool) != 2 {
-				fmt.Println("Wrong command on scheme name declaration")
+			schemaAndPool := strings.Split(words[3], ".")
+			if len(schemaAndPool) != 2 {
+				fmt.Println("Wrong command on schema name declaration")
 				return "error"
 			}
-			poolName := schemeAndPool[0]
-			schemeName := schemeAndPool[1]
+			poolName := schemaAndPool[0]
+			schemaName := schemaAndPool[1]
 
 			if strings.ToLower(words[0]) == "createcollection" {
-				return task0.CreateCollection(name, poolName, schemeName)
+				return db.CreateCollection(settings, name, poolName, schemaName)
 			} else if strings.ToLower(words[0]) == "deletecollection" {
-				return task0.DeleteCollection(name, poolName, schemeName)
+				return db.DeleteCollection(settings, name, poolName, schemaName)
 			}
 
 			fmt.Println("Wrong command")
@@ -126,19 +141,19 @@ func executeCommand(command string) string {
 				fmt.Println("Wrong command on collection name declaration")
 				return "error"
 			}
-			poolAndSchemeAndCollection := strings.Split(words[len(words)-1], ".")
-			if len(poolAndSchemeAndCollection) != 3 {
+			poolAndSchemaAndCollection := strings.Split(words[len(words)-1], ".")
+			if len(poolAndSchemaAndCollection) != 3 {
 				fmt.Println("Wrong command on collection name declaration")
 				return "error"
 			}
-			poolName := poolAndSchemeAndCollection[0]
-			schemeName := poolAndSchemeAndCollection[1]
-			collectionName := poolAndSchemeAndCollection[2]
+			poolName := poolAndSchemaAndCollection[0]
+			schemaName := poolAndSchemaAndCollection[1]
+			collectionName := poolAndSchemaAndCollection[2]
 
 			if strings.ToLower(words[0]) == "set" {
-				return task0.Set(key, value, poolName, schemeName, collectionName)
+				return db.Set(settings, key, value, poolName, schemaName, collectionName)
 			} else if strings.ToLower(words[0]) == "update" {
-				return task0.Update(key, value, poolName, schemeName, collectionName)
+				return db.Update(settings, key, value, poolName, schemaName, collectionName)
 			}
 
 			fmt.Println("Wrong command")
@@ -156,19 +171,23 @@ func executeCommand(command string) string {
 				fmt.Println("Wrong command on collection name declaration")
 				return "error"
 			}
-			poolAndSchemeAndCollection := strings.Split(words[len(words)-1], ".")
-			if len(poolAndSchemeAndCollection) != 3 {
+			poolAndSchemaAndCollection := strings.Split(words[len(words)-1], ".")
+			if len(poolAndSchemaAndCollection) != 3 {
 				fmt.Println("Wrong command on collection name declaration")
 				return "error"
 			}
-			poolName := poolAndSchemeAndCollection[0]
-			schemeName := poolAndSchemeAndCollection[1]
-			collectionName := poolAndSchemeAndCollection[2]
+			poolName := poolAndSchemaAndCollection[0]
+			schemaName := poolAndSchemaAndCollection[1]
+			collectionName := poolAndSchemaAndCollection[2]
 
 			if strings.ToLower(words[0]) == "get" {
-				return task0.Get(key, poolName, schemeName, collectionName)
+				value, ok := db.Get(settings, key, poolName, schemaName, collectionName)
+				if ok == "ok" {
+					fmt.Printf("%v = %v\n", key, value)
+				}
+				return ok
 			} else if strings.ToLower(words[0]) == "delete" {
-				return task0.Delete(key, poolName, schemeName, collectionName)
+				return db.Delete(settings, key, poolName, schemaName, collectionName)
 			}
 
 			fmt.Println("Wrong command")
@@ -187,16 +206,22 @@ func executeCommand(command string) string {
 				fmt.Println("Wrong command on collection name declaration")
 				return "error"
 			}
-			poolAndSchemeAndCollection := strings.Split(words[len(words)-1], ".")
-			if len(poolAndSchemeAndCollection) != 3 {
+			poolAndSchemaAndCollection := strings.Split(words[len(words)-1], ".")
+			if len(poolAndSchemaAndCollection) != 3 {
 				fmt.Println("Wrong command on collection name declaration")
 				return "error"
 			}
-			poolName := poolAndSchemeAndCollection[0]
-			schemeName := poolAndSchemeAndCollection[1]
-			collectionName := poolAndSchemeAndCollection[2]
+			poolName := poolAndSchemaAndCollection[0]
+			schemaName := poolAndSchemaAndCollection[1]
+			collectionName := poolAndSchemaAndCollection[2]
 
-			return task0.GetRange(leftBound, rightBound, poolName, schemeName, collectionName)
+			result, ok := db.GetRange(settings, leftBound, rightBound, poolName, schemaName, collectionName)
+			if ok == "ok" {
+				for k, v := range result {
+					fmt.Printf("%v = %v\n", k, v)
+				}
+			}
+			return ok
 		}
 	}
 
@@ -204,15 +229,15 @@ func executeCommand(command string) string {
 	return "error"
 }
 
-func executeFile(filePath string) string {
+func executeFile(db database, settings map[string]string, filePath string) string {
 	file, err := os.Open(filePath)
 	if err == nil {
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			command := scanner.Text()
-			ret := executeCommand(command)
+			ret := executeCommand(db, settings, command)
 			if ret == "exit" {
-				return "ok"
+				return "exit"
 			} else if ret == "error" {
 				return "error"
 			}
@@ -234,24 +259,30 @@ func help() {
 func main() {
 	args := os.Args[1:]
 
+	settings := make(map[string]string)
+	settings["DBtype"] = "BI"
+
+	db := task0.CreateDB()
+
 	// if there's a filename
 	if len(args) == 1 {
-		ret := executeFile(args[0])
+		ret := executeFile(db, settings, args[0])
 		if ret == "error" {
 			fmt.Println("Could not execute file")
 		} else if ret == "exit" {
 			return
 		}
 	} else if len(args) > 1 {
-		fmt.Println("Too many arguments")
+		fmt.Println("Too many arguments, only one is allowed")
 	}
 
 	help()
 	line := ""
 
 	for line != "exit" {
+		fmt.Println("Enter a command: ")
 		fmt.Scanf("%s", &line)
-		ret := executeCommand(line)
+		ret := executeCommand(db, settings, line)
 
 		if ret == "exit" {
 			line = "exit"
