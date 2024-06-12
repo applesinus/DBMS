@@ -1,5 +1,7 @@
 package task6
 
+import "fmt"
+
 type AVL struct {
 	root *nodeAVL
 }
@@ -14,11 +16,7 @@ type nodeAVL struct {
 }
 
 func (tree *AVL) needToRebalance(node *nodeAVL) bool {
-	if (tree.height(node.left)-tree.height(node.right) > 1) || (tree.height(node.right)-tree.height(node.left) > 1) {
-		return true
-	}
-
-	return false
+	return (tree.height(node.left)-tree.height(node.right) > 1) || (tree.height(node.right)-tree.height(node.left) > 1)
 }
 
 func (tree *AVL) height(node *nodeAVL) int {
@@ -216,9 +214,11 @@ func (tree *AVL) search(key string) (*nodeAVL, *nodeAVL) {
 }
 
 func (tree *AVL) changeHeights(node *nodeAVL) string {
-	for node.parent != nil {
-		if tree.needToRebalance(node.parent) {
-			ok := tree.rebalance(node.parent)
+	for node != nil {
+		node.height = max(tree.height(node.left), tree.height(node.right)) + 1
+
+		if tree.needToRebalance(node) {
+			ok := tree.rebalance(node)
 			if ok != "ok" {
 				return "balance error: " + ok
 			}
@@ -226,7 +226,6 @@ func (tree *AVL) changeHeights(node *nodeAVL) string {
 		}
 
 		node = node.parent
-		node.height = max(tree.height(node.left), tree.height(node.right)) + 1
 	}
 
 	return "ok"
@@ -259,7 +258,7 @@ func (tree *AVL) insert(key string, value interface{}) string {
 		parent.right = newNode
 	}
 
-	return tree.changeHeights(newNode)
+	return tree.changeHeights(newNode.parent)
 }
 
 func (tree *AVL) update(key string, value interface{}) string {
@@ -273,61 +272,126 @@ func (tree *AVL) update(key string, value interface{}) string {
 	return "ok"
 }
 
-func (tree *AVL) delete(key string) string {
+func (tree *AVL) remove(key string) string {
 	node, parent := tree.search(key)
-
 	if node == nil {
 		return "does not exist"
 	}
+	if parent == nil {
+		parent = node.parent
+	}
 
-	// if node has no children
 	if node.left == nil && node.right == nil {
+		// Node with no children
 		if parent == nil {
 			tree.root = nil
-		} else if parent.left == node {
-			parent.left = nil
+			return "ok"
 		} else {
-			parent.right = nil
+			if parent.left == node {
+				parent.left = nil
+			} else {
+				parent.right = nil
+			}
+
+			return tree.changeHeights(parent)
 		}
-		return "ok"
-	}
-
-	// if node has children
-	left := node.left
-	for left.right != nil || left != nil {
-		left = left.right
-	}
-	right := node.right
-	for right.left != nil || right != nil {
-		right = right.left
-	}
-
-	target := node
-	target = nil
-
-	if node.left {
-	}
-	for i := 0; i < len(right.key) && i < len(left.key) && i < len(node.key); i++ {
-		c := int(node.key[i])
-		l := int(left.key[i])
-		r := int(right.key[i])
-		if l-c == r-l {
-			continue
-		} else if l-c > r-l {
-			target = left
-			break
+	} else if node.left == nil {
+		// Node with only right child
+		if parent == nil {
+			tree.root = node.right
+			node.right.parent = nil
+			return "ok"
 		} else {
-			target = right
-			break
+			if parent.left == node {
+				parent.left = node.right
+			} else {
+				parent.right = node.right
+			}
+			node.right.parent = parent
+
+			parent.height = max(tree.height(node.parent.left), tree.height(node.parent.right)) + 1
+			return tree.changeHeights(parent)
 		}
-	}
-	if target == nil {
-		if len(right.key) > len(left.key) {
-			target = right
+	} else if node.right == nil {
+		// Node with only left child
+		if parent == nil {
+			tree.root = node.left
+			node.left.parent = nil
+			return "ok"
 		} else {
-			target = left
+			if parent.left == node {
+				parent.left = node.left
+			} else {
+				parent.right = node.left
+			}
+			node.left.parent = parent
+
+			parent.height = max(tree.height(parent.left), tree.height(parent.right)) + 1
+			return tree.changeHeights(parent)
 		}
+	} else {
+		// Node with two children: find in-order successor
+		successor, successorParent := tree.min(node.right)
+		if successor == nil && successorParent == nil {
+			return "not found children... somehow"
+		}
+		if successorParent == nil {
+			successorParent = successor.parent
+		}
+		// Replace node value with successor value
+		node.key = successor.key
+		node.value = successor.value
+		// Recursively remove successor (guaranteed no left child)
+		if successorParent.left == successor {
+			if successorParent.left.right != nil {
+				successorParent.left = successorParent.left.right
+			} else {
+				successorParent.left = nil
+			}
+		} else {
+			successorParent.right = nil
+		}
+
+		successorParent.height = max(tree.height(successorParent.left), tree.height(successorParent.right)) + 1
+		return tree.changeHeights(successorParent)
+	}
+}
+
+func (tree *AVL) min(node *nodeAVL) (*nodeAVL, *nodeAVL) {
+	if node == nil {
+		return nil, nil
+	}
+	current := node
+	for current.left != nil {
+		current = current.left
 	}
 
-	return "ok"
+	return current, current.parent
+}
+
+func (tree *AVL) print() {
+	fmt.Println("\nAVL Tree:\n")
+	tree.printHelper(tree.root)
+}
+
+func (tree *AVL) printHelper(node *nodeAVL) {
+	if node == nil {
+		return
+	}
+
+	if node.parent != nil {
+		fmt.Printf("Node: %v:%v, h=%v. (parent: %v, ", node.key, node.value, node.height, node.parent.key)
+	} else {
+		fmt.Printf("Node: %v:%v h=%v. (parent: nil, ", node.key, node.value, node.height)
+	}
+	if node.left != nil {
+		fmt.Printf("Left: %v, ", node.left.key)
+	}
+	if node.right != nil {
+		fmt.Printf("Right: %v, ", node.right.key)
+	}
+	fmt.Printf(")\n")
+
+	tree.printHelper(node.left)
+	tree.printHelper(node.right)
 }

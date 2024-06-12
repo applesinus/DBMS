@@ -1,4 +1,4 @@
-module Redis_Labs
+module DBMS
 
 go 1.21.1
 

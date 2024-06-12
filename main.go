@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Redis_Labs/task0"
+	"DBMS/task0"
 	"bufio"
 	"fmt"
 	"os"
