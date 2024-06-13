@@ -366,10 +366,10 @@ func (tree *RB) uncle(node *nodeRB) *nodeRB {
 
 func (tree *RB) print() {
 	fmt.Println("\nRB Tree:\n")
-	tree.printHelper(tree.root)
+	tree.root.printHelper()
 }
 
-func (tree *RB) printHelper(node *nodeRB) {
+func (node *nodeRB) printHelper() {
 	if node == nil {
 		return
 	}
@@ -387,6 +387,6 @@ func (tree *RB) printHelper(node *nodeRB) {
 	}
 	fmt.Printf(")\n")
 
-	tree.printHelper(node.left)
-	tree.printHelper(node.right)
+	node.left.printHelper()
+	node.right.printHelper()
 }

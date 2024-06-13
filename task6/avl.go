@@ -369,10 +369,10 @@ func (tree *AVL) min(node *nodeAVL) (*nodeAVL, *nodeAVL) {
 
 func (tree *AVL) print() {
 	fmt.Println("\nAVL Tree:\n")
-	tree.printHelper(tree.root)
+	tree.root.printHelper()
 }
 
-func (tree *AVL) printHelper(node *nodeAVL) {
+func (node *nodeAVL) printHelper() {
 	if node == nil {
 		return
 	}
@@ -390,6 +390,6 @@ func (tree *AVL) printHelper(node *nodeAVL) {
 	}
 	fmt.Printf(")\n")
 
-	tree.printHelper(node.left)
-	tree.printHelper(node.right)
+	node.left.printHelper()
+	node.right.printHelper()
 }
