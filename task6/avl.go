@@ -238,7 +238,7 @@ func (tree *AVL) insert(key string, value interface{}) string {
 		return "exist"
 	}
 
-	newNode := &nodeAVL{
+	node = &nodeAVL{
 		key:    key,
 		value:  value,
 		parent: parent,
@@ -248,17 +248,17 @@ func (tree *AVL) insert(key string, value interface{}) string {
 	}
 
 	if parent == nil {
-		tree.root = newNode
+		tree.root = node
 		return "ok"
 	}
 
 	if key < parent.key {
-		parent.left = newNode
+		parent.left = node
 	} else {
-		parent.right = newNode
+		parent.right = node
 	}
 
-	return tree.changeHeights(newNode.parent)
+	return tree.changeHeights(node.parent)
 }
 
 func (tree *AVL) update(key string, value interface{}) string {
@@ -273,13 +273,11 @@ func (tree *AVL) update(key string, value interface{}) string {
 }
 
 func (tree *AVL) remove(key string) string {
-	node, parent := tree.search(key)
+	node, _ := tree.search(key)
 	if node == nil {
 		return "does not exist"
 	}
-	if parent == nil {
-		parent = node.parent
-	}
+	parent := node.parent
 
 	if node.left == nil && node.right == nil {
 		// Node with no children
@@ -330,7 +328,7 @@ func (tree *AVL) remove(key string) string {
 			return tree.changeHeights(parent)
 		}
 	} else {
-		// Node with two children: find in-order successor
+		// Node with two children
 		successor, successorParent := tree.min(node.right)
 		if successor == nil && successorParent == nil {
 			return "not found children... somehow"
@@ -338,10 +336,10 @@ func (tree *AVL) remove(key string) string {
 		if successorParent == nil {
 			successorParent = successor.parent
 		}
-		// Replace node value with successor value
+
 		node.key = successor.key
 		node.value = successor.value
-		// Recursively remove successor (guaranteed no left child)
+
 		if successorParent.left == successor {
 			if successorParent.left.right != nil {
 				successorParent.left = successorParent.left.right
