@@ -393,3 +393,11 @@ func (node *nodeAVL) printHelper() {
 	node.left.printHelper()
 	node.right.printHelper()
 }
+
+func (tree *AVL) find(key string) (interface{}, bool) {
+	node, _ := tree.search(key)
+	if node == nil {
+		return nil, false
+	}
+	return node.value, true
+}

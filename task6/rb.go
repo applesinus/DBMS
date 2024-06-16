@@ -97,6 +97,7 @@ func (tree *RB) insert(key string, value interface{}) string {
 }
 
 func (tree *RB) remove(key string) string {
+	fmt.Printf("removing %v\n", key)
 	node, _ := tree.search(key)
 
 	if node == nil {
@@ -108,12 +109,16 @@ func (tree *RB) remove(key string) string {
 	if l == nil && r == nil {
 		if parent == nil {
 			tree.root = nil
+			return "ok"
 		} else if parent.left == node {
 			parent.left = nil
+			return tree.fixRemove(node, true)
 		} else {
 			parent.right = nil
+			return tree.fixRemove(node, false)
 		}
 	} else if l == nil {
+		wasLeft := parent.left == node
 		if parent == nil {
 			tree.root = r
 		} else if parent.left == node {
@@ -123,7 +128,10 @@ func (tree *RB) remove(key string) string {
 		}
 		r.parent = parent
 		r.color = node.color
+
+		return tree.fixRemove(node, wasLeft)
 	} else if r == nil {
+		wasLeft := parent.left == node
 		if parent == nil {
 			tree.root = l
 		} else if parent.left == node {
@@ -133,49 +141,57 @@ func (tree *RB) remove(key string) string {
 		}
 		l.parent = parent
 		l.color = node.color
-	} else {
-		min, minParent := tree.min(r)
 
-		if min.right != nil {
-			if minParent == node {
-				minParent.right = min.right
-			} else {
-				minParent.left = min.right
-			}
-			min.right.parent = minParent
-			min.right.color = min.color
-		} else {
-			minParent.left = nil
+		return tree.fixRemove(node, wasLeft)
+	} else {
+		min := tree.min(r)
+		if min == nil {
+			return "error"
+		}
+		newKey := min.key
+		newValue := min.value
+		res := tree.remove(min.key)
+		if res != "ok" {
+			return res
 		}
 
-		node.key = min.key
-		node.value = min.value
+		node.key = newKey
+		node.value = newValue
 
-		return tree.fixRemove(node)
+		return res
 	}
-
-	return "ok"
 }
 
-func (tree *RB) fixRemove(node *nodeRB) string {
-	if node.color == Black || node == tree.root {
+func (tree *RB) fixRemove(node *nodeRB, wasLeft bool) string {
+	if getColor(node) == Red || node == tree.root {
 		return "ok"
 	}
+	fmt.Printf("fixing node: %v\n", node.key)
 
-	for node != nil && node.color == Black {
-		if node == node.parent.left {
-			sibling := node.parent.right
-			if sibling.color == Red {
+	for node != tree.root && getColor(node) == Black {
+		if wasLeft {
+			var sibling *nodeRB
+			if node == tree.root {
+				sibling = nil
+			} else {
+				sibling = node.parent.right
+			}
+			if getColor(sibling) == Red {
 				sibling.color = Black
 				node.parent.color = Red
 				tree.leftRotate(node.parent)
 				sibling = node.parent.right
 			}
-			if sibling.left.color == Black && sibling.right.color == Black {
+			if getColor(sibling.left) == Black && getColor(sibling.right) == Black {
 				sibling.color = Red
+				if node == node.parent.left {
+					wasLeft = true
+				} else {
+					wasLeft = false
+				}
 				node = node.parent
 			} else {
-				if sibling.right.color == Black {
+				if getColor(sibling.right) == Black {
 					sibling.left.color = Black
 					sibling.color = Red
 					tree.rightRotate(sibling)
@@ -188,18 +204,28 @@ func (tree *RB) fixRemove(node *nodeRB) string {
 				node = tree.root
 			}
 		} else {
-			sibling := node.parent.left
-			if sibling.color == Red {
+			var sibling *nodeRB
+			if node == tree.root {
+				sibling = nil
+			} else {
+				sibling = node.parent.left
+			}
+			if getColor(sibling) == Red {
 				sibling.color = Black
 				node.parent.color = Red
 				tree.rightRotate(node.parent)
 				sibling = node.parent.left
 			}
-			if sibling.right.color == Black && sibling.left.color == Black {
+			if getColor(sibling.right) == Black && getColor(sibling.left) == Black {
 				sibling.color = Red
+				if node == node.parent.right {
+					wasLeft = false
+				} else {
+					wasLeft = true
+				}
 				node = node.parent
 			} else {
-				if sibling.left.color == Black {
+				if getColor(sibling.left) == Black {
 					sibling.right.color = Black
 					sibling.color = Red
 					tree.leftRotate(sibling)
@@ -215,30 +241,38 @@ func (tree *RB) fixRemove(node *nodeRB) string {
 	}
 
 	node.color = Black
+	tree.root.color = Black
 	return "ok"
 }
 
-func (tree *RB) min(node *nodeRB) (*nodeRB, *nodeRB) {
+func getColor(node *nodeRB) Color {
 	if node == nil {
-		return nil, nil
+		return Black
+	}
+	return node.color
+}
+
+func (tree *RB) min(node *nodeRB) *nodeRB {
+	if node == nil {
+		return nil
 	}
 	current := node
 	for current.left != nil {
 		current = current.left
 	}
 
-	return current, current.parent
+	return current
 }
 
 func (tree *RB) fixInsert(node *nodeRB) string {
-	if node.parent.color == Black {
+	if getColor(node.parent) == Black || node.parent == nil {
 		return "ok"
 	}
 
-	for node.parent.color == Red {
+	for node.parent != nil && getColor(node.parent) == Red {
 		un, gp, pa := tree.uncle(node), tree.grandparent(node), node.parent
 		if gp.left == pa {
-			if un != nil && un.color == Red {
+			if un != nil && getColor(un) == Red {
 				pa.color = Black
 				un.color = Black
 				gp.color = Red
@@ -255,7 +289,7 @@ func (tree *RB) fixInsert(node *nodeRB) string {
 				tree.rightRotate(gp)
 			}
 		} else {
-			if un != nil && un.color == Red {
+			if un != nil && getColor(un) == Red {
 				pa.color = Black
 				un.color = Black
 				gp.color = Red
@@ -374,10 +408,16 @@ func (node *nodeRB) printHelper() {
 		return
 	}
 
-	if node.parent != nil {
-		fmt.Printf("Node: %v:%v, c=%v. (parent: %v, ", node.key, node.value, node.color, node.parent.key)
+	var c string
+	if getColor(node) == Red {
+		c = "Red"
 	} else {
-		fmt.Printf("Node: %v:%v c=%v. (parent: nil, ", node.key, node.value, node.color)
+		c = "Black"
+	}
+	if node.parent != nil {
+		fmt.Printf("Node: %v:%v, c=%v. (parent: %v, ", node.key, node.value, c, node.parent.key)
+	} else {
+		fmt.Printf("Node: %v:%v c=%v. (parent: nil, ", node.key, node.value, c)
 	}
 	if node.left != nil {
 		fmt.Printf("Left: %v, ", node.left.key)
@@ -389,4 +429,12 @@ func (node *nodeRB) printHelper() {
 
 	node.left.printHelper()
 	node.right.printHelper()
+}
+
+func (tree *RB) find(key string) (interface{}, bool) {
+	node, _ := tree.search(key)
+	if node == nil {
+		return nil, false
+	}
+	return node.value, true
 }
