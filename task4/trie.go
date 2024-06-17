@@ -55,7 +55,7 @@ func (node *NodeTrie) insert(word string, prev *TrieWord) (*TrieWord, string) {
 	return newNode.insert(word[1:], prev)
 }
 
-func (t *Trie) Get(value TrieWord) (res string, ok bool) {
+func (trieWord *TrieWord) String() (res string, ok bool) {
 	ok = true
 
 	defer func(ok *bool) {
@@ -63,7 +63,7 @@ func (t *Trie) Get(value TrieWord) (res string, ok bool) {
 	}(&ok)
 
 	var word strings.Builder
-	for _, node := range value.chars {
+	for _, node := range trieWord.chars {
 		word.Grow(1)
 		word.WriteByte(node.value)
 	}
@@ -83,7 +83,7 @@ func (t *Trie) print() {
 func (node *NodeTrie) print(tree *Trie, prev []*NodeTrie) {
 	if node.isEnd {
 		newprev := TrieWord{chars: append(prev, node)}
-		word, ok := tree.Get(newprev)
+		word, ok := newprev.String()
 		if !ok {
 			fmt.Printf("error\n")
 			return
@@ -94,14 +94,4 @@ func (node *NodeTrie) print(tree *Trie, prev []*NodeTrie) {
 		newprev := append(prev, node)
 		next.print(tree, newprev)
 	}
-}
-
-func TestTrie() {
-	trie := Trie{}
-	trie.insert("hello")
-	trie.insert("hell")
-	trie.insert("help")
-	trie.insert("helps")
-	trie.insert("helping")
-	trie.print()
 }
