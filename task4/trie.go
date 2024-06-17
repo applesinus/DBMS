@@ -30,13 +30,11 @@ func (t *Trie) Insert(word string) (*TrieWord, string) {
 
 func (node *NodeTrie) insert(word string, prev *TrieWord) (*TrieWord, string) {
 	if len(word) == 0 {
-		if node.isEnd {
-			return nil, "already exist"
-		} else {
+		if !node.isEnd {
 			node.isEnd = true
-			prev.chars = append(prev.chars, node)
-			return prev, "ok"
 		}
+		prev.chars = append(prev.chars, node)
+		return prev, "ok"
 	}
 
 	for _, next := range node.nexts {

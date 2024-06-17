@@ -1,17 +1,9 @@
 package task0
 
 import (
+	"DBMS/interfaces"
 	"DBMS/task4"
 )
-
-// collectionInterface - basic collection interface
-type CollectionInterface interface {
-	Set(key string, value string) string
-	Update(key string, value string) string
-	Get(key string) (string, string)
-	GetRange(leftBound string, rightBound string) (*map[string]string, string)
-	Delete(key string) string
-}
 
 // Database
 type Database struct {
@@ -27,7 +19,7 @@ type Pool struct {
 // Schema
 type Schema struct {
 	name       string
-	collection map[string]CollectionInterface
+	collection map[string]interfaces.CollectionInterface
 }
 
 // CollectionBI - Built-in representation of collection

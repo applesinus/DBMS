@@ -1,6 +1,7 @@
 package task0
 
 import (
+	"DBMS/interfaces"
 	"DBMS/task4"
 	"DBMS/task6"
 	"fmt"
@@ -52,7 +53,7 @@ func (db *Database) CreateSchema(settings map[string]string, name string, pool s
 
 	db.pools[pool].schema[name] = Schema{
 		name:       name,
-		collection: make(map[string]CollectionInterface),
+		collection: make(map[string]interfaces.CollectionInterface),
 	}
 	return "ok"
 }

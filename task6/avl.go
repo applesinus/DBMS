@@ -18,6 +18,27 @@ type nodeAVL struct {
 	height int
 }
 
+func (tree AVL) Copy() tree {
+	newTree := &AVL{root: nil}
+	newTree.root = tree.root.copy()
+	return newTree
+}
+
+func (node *nodeAVL) copy() *nodeAVL {
+	if node == nil {
+		return nil
+	}
+
+	return &nodeAVL{
+		key:    node.key,
+		value:  node.value,
+		left:   node.left.copy(),
+		right:  node.right.copy(),
+		parent: node.parent.copy(),
+		height: node.height,
+	}
+}
+
 func (tree *AVL) needToRebalance(node *nodeAVL) bool {
 	return (tree.height(node.left)-tree.height(node.right) > 1) || (tree.height(node.right)-tree.height(node.left) > 1)
 }

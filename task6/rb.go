@@ -25,6 +25,27 @@ type nodeRB struct {
 	value  task4.TrieWord
 }
 
+func (tree RB) Copy() tree {
+	newTree := &RB{root: nil}
+	newTree.root = tree.root.copy()
+	return newTree
+}
+
+func (node *nodeRB) copy() *nodeRB {
+	if node == nil {
+		return nil
+	}
+
+	return &nodeRB{
+		color:  node.color,
+		key:    node.key,
+		left:   node.left.copy(),
+		right:  node.right.copy(),
+		parent: node.parent.copy(),
+		value:  node.value,
+	}
+}
+
 // returns:
 //
 // {node, nil} if found

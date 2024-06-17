@@ -1,6 +1,7 @@
 package task6
 
 import (
+	"DBMS/interfaces"
 	"fmt"
 	"strconv"
 )
@@ -12,11 +13,16 @@ type tree interface {
 	get(key string) (string, bool)
 	getRange(leftBound string, rightBound string) (*map[string]string, string)
 	remove(key string) string
+	Copy() tree
 }
 
 type Tree struct {
 	self    tree
 	variant string
+}
+
+func (t Tree) Copy() interfaces.CollectionInterface {
+	return Tree{self: t.self.Copy(), variant: t.variant}
 }
 
 func NewTree(variant string) *Tree {

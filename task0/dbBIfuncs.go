@@ -1,6 +1,7 @@
 package task0
 
 import (
+	"DBMS/interfaces"
 	"DBMS/task4"
 	"fmt"
 )
@@ -74,4 +75,8 @@ func (collection *CollectionBI) Delete(key string) string {
 	delete(collection.value, key)
 
 	return "ok"
+}
+
+func (collection *CollectionBI) Copy() interfaces.CollectionInterface {
+	return &CollectionBI{name: collection.name, value: collection.value}
 }

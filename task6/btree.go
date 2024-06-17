@@ -18,6 +18,34 @@ type nodeBtree struct {
 	values   []task4.TrieWord
 }
 
+func (tree Btree) Copy() tree {
+	newTree := &Btree{root: nil}
+	newTree.root = tree.root.copy()
+	return newTree
+}
+
+func (node *nodeBtree) copy() *nodeBtree {
+	newNode := &nodeBtree{
+		isLeaf:   node.isLeaf,
+		keys:     make([]string, len(node.keys)),
+		children: make([]*nodeBtree, len(node.children)),
+		values:   make([]task4.TrieWord, len(node.values)),
+	}
+
+	copy(newNode.keys, node.keys)
+	copy(newNode.values, node.values)
+
+	if node.isLeaf {
+		return newNode
+	}
+
+	for i := 0; i < len(node.children); i++ {
+		newNode.children[i] = node.children[i].copy()
+	}
+
+	return newNode
+}
+
 func (tree *Btree) search(key string) (*nodeBtree, int) {
 	if tree.root == nil {
 		return nil, -1
