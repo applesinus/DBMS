@@ -94,7 +94,7 @@ func (db *Database) CreateCollection(settings map[string]string, name string, co
 		return "ok"
 	}
 
-	if collType == "AVL" || collType == "RB" || (len(collType) > 5 && collType[:5] == "Btree") {
+	if collType == "AVL" || collType == "RB" || (len(collType) >= 5 && collType[:5] == "Btree") {
 		tree := task6.NewTree(collType)
 		if tree == nil {
 			return "error"
@@ -136,13 +136,15 @@ func (db *Database) Get(settings map[string]string, key string, pool string, sch
 	return res
 }
 
-func (db *Database) GetRange(settings map[string]string, leftBound string, rightBound string, pool string, schema string, coll string) map[string]string {
+func (db *Database) GetRange(settings map[string]string, leftBound string, rightBound string, pool string, schema string, coll string) *map[string]string {
 	if !db.checkCollection(pool, schema, coll) {
-		return make(map[string]string)
+		ret := make(map[string]string)
+		return &ret
 	}
 	res, ok := db.pools[pool].schema[schema].collection[coll].GetRange(leftBound, rightBound)
 	if ok != "ok" {
-		return make(map[string]string)
+		ret := make(map[string]string)
+		return &ret
 	}
 	return res
 }

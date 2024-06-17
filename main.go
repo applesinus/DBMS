@@ -81,13 +81,12 @@ func executeCommand(db *task0.Database, settings map[string]string, command stri
 			fmt.Println("Wrong command")
 			return "error"
 
-		// Create and Delete Collection
-		// TODO split them: diff count of args
-		case "createcollection", "deletecollection":
+		// Create Collection
+		case "createcollection":
 			if len(words) > 5 {
 				fmt.Println("Too many arguments")
 				return "error"
-			} else if len(words) < 4 {
+			} else if len(words) < 5 {
 				fmt.Println("Too few arguments")
 				return "error"
 			}
@@ -106,14 +105,32 @@ func executeCommand(db *task0.Database, settings map[string]string, command stri
 			poolName := schemaAndPool[0]
 			schemaName := schemaAndPool[1]
 
-			if strings.ToLower(words[0]) == "createcollection" {
-				return db.CreateCollection(settings, name, collType, poolName, schemaName)
-			} else if strings.ToLower(words[0]) == "deletecollection" {
-				return db.DeleteCollection(settings, name, poolName, schemaName)
+			return db.CreateCollection(settings, name, collType, poolName, schemaName)
+
+		// Delete Collection
+		case "deletecollection":
+			if len(words) > 4 {
+				fmt.Println("Too many arguments")
+				return "error"
+			} else if len(words) < 4 {
+				fmt.Println("Too few arguments")
+				return "error"
 			}
 
-			fmt.Println("Wrong command")
-			return "error"
+			name := words[1]
+			if words[2] != "in" {
+				fmt.Println("Wrong command on schema name declaration")
+				return "error"
+			}
+			schemaAndPool := strings.Split(words[3], ".")
+			if len(schemaAndPool) != 2 {
+				fmt.Println("Wrong command on schema name declaration")
+				return "error"
+			}
+			poolName := schemaAndPool[0]
+			schemaName := schemaAndPool[1]
+
+			return db.DeleteCollection(settings, name, poolName, schemaName)
 
 		// Set and Update value
 		case "set", "update":
@@ -169,8 +186,9 @@ func executeCommand(db *task0.Database, settings map[string]string, command stri
 
 			if strings.ToLower(words[0]) == "get" {
 				value := db.Get(settings, key, poolName, schemaName, collectionName)
-				if value == "" {
+				if value != "" {
 					fmt.Printf("%v = %v\n", key, value)
+					return "ok"
 				}
 				return "error"
 			} else if strings.ToLower(words[0]) == "delete" {
@@ -203,8 +221,8 @@ func executeCommand(db *task0.Database, settings map[string]string, command stri
 			collectionName := poolAndSchemaAndCollection[2]
 
 			result := db.GetRange(settings, leftBound, rightBound, poolName, schemaName, collectionName)
-			if len(result) != 0 {
-				for k, v := range result {
+			if result != nil && len(*result) != 0 {
+				for k, v := range *result {
 					fmt.Printf("%v = %v\n", k, v)
 				}
 				return "ok"
@@ -224,6 +242,7 @@ func executeFile(db *task0.Database, settings map[string]string, filePath string
 		for scanner.Scan() {
 			command := scanner.Text()
 			ret := executeCommand(db, settings, command)
+			fmt.Printf("command: %v, ret: %v\n", command, ret)
 			if ret == "exit" {
 				return "exit"
 			} else if ret == "error" {
@@ -266,9 +285,16 @@ func main() {
 	help()
 	line := ""
 
+	in := bufio.NewReader(os.Stdin)
 	for line != "exit" {
-		fmt.Println("Enter a command: ")
-		fmt.Scanf("%s", &line)
+		fmt.Printf("Enter a command: ")
+		line, err := in.ReadString('\n')
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
 		ret := executeCommand(db, settings, line)
 
 		if ret == "exit" {

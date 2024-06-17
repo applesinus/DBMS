@@ -35,7 +35,7 @@ func (collection *CollectionBI) Get(key string) (string, string) {
 	return collection.value[key], "ok"
 }
 
-func (collection *CollectionBI) GetRange(leftBound string, rightBound string) (map[string]string, string) {
+func (collection *CollectionBI) GetRange(leftBound string, rightBound string) (*map[string]string, string) {
 	result := make(map[string]string, 0)
 	for k, v := range collection.value {
 		if k >= leftBound && k <= rightBound {
@@ -43,7 +43,7 @@ func (collection *CollectionBI) GetRange(leftBound string, rightBound string) (m
 		}
 	}
 
-	return result, "ok"
+	return &result, "ok"
 }
 
 func (collection *CollectionBI) Delete(key string) string {

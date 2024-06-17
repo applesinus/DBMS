@@ -231,7 +231,7 @@ func (tree *AVL) changeHeights(node *nodeAVL) string {
 	return "ok"
 }
 
-func (tree *AVL) insert(key string, value interface{}) string {
+func (tree *AVL) set(key string, value interface{}) string {
 	node, parent := tree.search(key)
 
 	if node != nil {
@@ -394,10 +394,40 @@ func (node *nodeAVL) printHelper() {
 	node.right.printHelper()
 }
 
-func (tree *AVL) find(key string) (interface{}, bool) {
+func (tree *AVL) get(key string) (interface{}, bool) {
 	node, _ := tree.search(key)
 	if node == nil {
 		return nil, false
 	}
 	return node.value, true
+}
+
+func (tree *AVL) getRange(leftBound string, rightBound string) (*map[string]interface{}, string) {
+	result := make(map[string]interface{})
+	return &result, tree.root.getRange(leftBound, rightBound, &result)
+}
+
+func (node *nodeAVL) getRange(leftBound string, rightBound string, result *map[string]interface{}) (ret string) {
+	defer func() {
+		if ret != "ok" {
+			ret = "error"
+		}
+	}()
+
+	ret = "start"
+
+	if node.key >= leftBound && node.key <= rightBound {
+		(*result)[node.key] = node.value
+	}
+
+	if node.left != nil && node.key >= leftBound {
+		node.left.getRange(leftBound, rightBound, result)
+	}
+
+	if node.right != nil && node.key <= rightBound {
+		node.right.getRange(leftBound, rightBound, result)
+	}
+
+	ret = "ok"
+	return
 }

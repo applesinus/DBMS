@@ -23,7 +23,7 @@ func (tree *Btree) search(key string) (*nodeBtree, int) {
 }
 
 func (node *nodeBtree) search(key string) (*nodeBtree, int) {
-	if len(node.keys) == 0 {
+	if node == nil || len(node.keys) == 0 {
 		return nil, -1
 	}
 
@@ -100,7 +100,7 @@ func (tree *Btree) update(key string, value interface{}) string {
 	return "ok"
 }
 
-func (tree *Btree) insert(key string, value interface{}) string {
+func (tree *Btree) set(key string, value interface{}) string {
 	if tree.root == nil {
 		tree.root = &nodeBtree{
 			isLeaf:   true,
@@ -276,6 +276,10 @@ func (tree *Btree) remove(key string) string {
 					parent.children = append(parent.children[:leftIndex], parent.children[leftIndex+1:]...)
 				}
 				return "ok"
+			} else if node == tree.root {
+				node.keys = append(node.keys[:index], node.keys[index+1:]...)
+				node.values = append(node.values[:index], node.values[index+1:]...)
+				return "ok"
 			}
 		}
 	} else {
@@ -332,10 +336,50 @@ func (node *nodeBtree) printHelper() {
 	}
 }
 
-func (tree *Btree) find(key string) (interface{}, bool) {
+func (tree *Btree) get(key string) (interface{}, bool) {
 	node, index := tree.root.search(key)
-	if node == nil {
+	if node == nil || index == -1 {
 		return nil, false
 	}
 	return node.values[index], true
+}
+
+func (tree *Btree) getRange(leftBound string, rightBound string) (*map[string]interface{}, string) {
+	result := make(map[string]interface{})
+	return &result, tree.root.getRange(leftBound, rightBound, &result)
+}
+
+func (node *nodeBtree) getRange(leftBound string, rightBound string, result *map[string]interface{}) (ret string) {
+	defer func() {
+		if ret != "ok" {
+			ret = "error"
+		}
+	}()
+
+	ret = "start"
+
+	if !node.isLeaf {
+		for i := 0; i < len(node.keys); i++ {
+			if node.keys[i] >= leftBound && node.keys[i] <= rightBound {
+				ret = node.children[i].getRange(leftBound, rightBound, result)
+				if ret != "ok" {
+					return
+				}
+			}
+		}
+		if node.keys[len(node.keys)-1] >= leftBound && node.keys[len(node.keys)-1] <= rightBound {
+			ret = node.children[len(node.children)-1].getRange(leftBound, rightBound, result)
+			if ret != "ok" {
+				return
+			}
+		}
+	}
+
+	for i := 0; i < len(node.keys); i++ {
+		if node.keys[i] >= leftBound && node.keys[i] <= rightBound {
+			(*result)[node.keys[i]] = node.values[i]
+		}
+	}
+
+	return "ok"
 }

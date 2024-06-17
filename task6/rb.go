@@ -65,7 +65,7 @@ func (tree *RB) update(key string, value interface{}) string {
 	return "ok"
 }
 
-func (tree *RB) insert(key string, value interface{}) string {
+func (tree *RB) set(key string, value interface{}) string {
 	node, parent := tree.search(key)
 
 	if node != nil {
@@ -431,10 +431,40 @@ func (node *nodeRB) printHelper() {
 	node.right.printHelper()
 }
 
-func (tree *RB) find(key string) (interface{}, bool) {
+func (tree *RB) get(key string) (interface{}, bool) {
 	node, _ := tree.search(key)
 	if node == nil {
 		return nil, false
 	}
 	return node.value, true
+}
+
+func (tree *RB) getRange(leftBound string, rightBound string) (*map[string]interface{}, string) {
+	result := make(map[string]interface{})
+	return &result, tree.root.getRange(leftBound, rightBound, &result)
+}
+
+func (node *nodeRB) getRange(leftBound string, rightBound string, result *map[string]interface{}) (ret string) {
+	defer func() {
+		if ret != "ok" {
+			ret = "error"
+		}
+	}()
+
+	ret = "start"
+
+	if node.key >= leftBound && node.key <= rightBound {
+		(*result)[node.key] = node.value
+	}
+
+	if node.left != nil && node.key >= leftBound {
+		node.left.getRange(leftBound, rightBound, result)
+	}
+
+	if node.right != nil && node.key <= rightBound {
+		node.right.getRange(leftBound, rightBound, result)
+	}
+
+	ret = "ok"
+	return
 }

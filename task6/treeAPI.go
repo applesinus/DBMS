@@ -7,9 +7,10 @@ import (
 
 type tree interface {
 	print()
-	insert(key string, value interface{}) string
+	set(key string, value interface{}) string
 	update(key string, value interface{}) string
-	find(key string) (interface{}, bool)
+	get(key string) (interface{}, bool)
+	getRange(leftBound string, rightBound string) (*map[string]interface{}, string)
 	remove(key string) string
 }
 
@@ -33,7 +34,7 @@ func NewTree(variant string) *Tree {
 		}
 	}
 
-	if len(variant) > 5 && variant[:5] == "Btree" {
+	if len(variant) >= 5 && variant[:5] == "Btree" {
 		t, err := strconv.Atoi(variant[5:])
 		if err != nil {
 			t = 2
@@ -48,17 +49,17 @@ func NewTree(variant string) *Tree {
 }
 
 func (t Tree) Set(key string, value string) string {
-	_, ok := t.self.find(key)
+	_, ok := t.self.get(key)
 	if ok {
 		fmt.Printf("Key %s already exists\n", key)
 		return "error"
 	}
 
-	return t.self.insert(key, value)
+	return t.self.set(key, value)
 }
 
 func (t Tree) Update(key string, value string) string {
-	_, ok := t.self.find(key)
+	_, ok := t.self.get(key)
 	if !ok {
 		fmt.Printf("Key %s does not exist\n", key)
 		return "error"
@@ -68,7 +69,7 @@ func (t Tree) Update(key string, value string) string {
 }
 
 func (t Tree) Get(key string) (string, string) {
-	value, ok := t.self.find(key)
+	value, ok := t.self.get(key)
 	if !ok {
 		fmt.Printf("Key %s does not exist\n", key)
 		return "", "error"
@@ -77,10 +78,20 @@ func (t Tree) Get(key string) (string, string) {
 	return fmt.Sprintf("%s", value), "ok"
 }
 
-func (t Tree) GetRange(leftBound string, rightBound string) (map[string]string, string) {
-	// TODO
+func (t Tree) GetRange(leftBound string, rightBound string) (*map[string]string, string) {
+	result, ok := t.self.getRange(leftBound, rightBound)
 
-	return nil, "ok"
+	if ok != "ok" {
+		return nil, ok
+	}
+
+	ret := make(map[string]string)
+
+	for key, value := range *result {
+		ret[key] = fmt.Sprintf("%s", value)
+	}
+
+	return &ret, "ok"
 }
 
 func (t Tree) Delete(key string) string {
