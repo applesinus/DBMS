@@ -8,22 +8,7 @@ import (
 	"strings"
 )
 
-// database - basic database interface
-type database interface {
-	CreatePool(settings map[string]string, name string) string
-	DeletePool(settings map[string]string, name string) string
-	CreateSchema(settings map[string]string, name string, pool string) string
-	DeleteSchema(settings map[string]string, name string, pool string) string
-	CreateCollection(settings map[string]string, name string, pool string, schema string) string
-	DeleteCollection(settings map[string]string, name string, pool string, schema string) string
-	Set(settings map[string]string, key string, value []string, pool string, schema string, collection string) string
-	Update(settings map[string]string, key string, value []string, pool string, schema string, collection string) string
-	Get(settings map[string]string, key string, pool string, schema string, collection string) (string, string)
-	GetRange(settings map[string]string, leftBound string, rightBound string, pool string, schema string, collection string) (map[string]string, string)
-	Delete(settings map[string]string, key string, pool string, schema string, collection string) string
-}
-
-func executeCommand(db database, settings map[string]string, command string) string {
+func executeCommand(db *task0.Database, settings map[string]string, command string) string {
 	words := strings.Fields(command)
 	switch len(words) {
 	// Empty line
@@ -97,8 +82,9 @@ func executeCommand(db database, settings map[string]string, command string) str
 			return "error"
 
 		// Create and Delete Collection
+		// TODO split them: diff count of args
 		case "createcollection", "deletecollection":
-			if len(words) > 4 {
+			if len(words) > 5 {
 				fmt.Println("Too many arguments")
 				return "error"
 			} else if len(words) < 4 {
@@ -106,12 +92,13 @@ func executeCommand(db database, settings map[string]string, command string) str
 				return "error"
 			}
 
-			name := words[1]
-			if words[2] != "in" {
+			collType := words[1]
+			name := words[2]
+			if words[3] != "in" {
 				fmt.Println("Wrong command on schema name declaration")
 				return "error"
 			}
-			schemaAndPool := strings.Split(words[3], ".")
+			schemaAndPool := strings.Split(words[4], ".")
 			if len(schemaAndPool) != 2 {
 				fmt.Println("Wrong command on schema name declaration")
 				return "error"
@@ -120,7 +107,7 @@ func executeCommand(db database, settings map[string]string, command string) str
 			schemaName := schemaAndPool[1]
 
 			if strings.ToLower(words[0]) == "createcollection" {
-				return db.CreateCollection(settings, name, poolName, schemaName)
+				return db.CreateCollection(settings, name, collType, poolName, schemaName)
 			} else if strings.ToLower(words[0]) == "deletecollection" {
 				return db.DeleteCollection(settings, name, poolName, schemaName)
 			}
@@ -136,7 +123,7 @@ func executeCommand(db database, settings map[string]string, command string) str
 			}
 
 			key := words[1]
-			value := words[2 : len(words)-2]
+			value := strings.Join(words[2:len(words)-2], " ")
 			if words[len(words)-2] != "in" {
 				fmt.Println("Wrong command on collection name declaration")
 				return "error"
@@ -181,11 +168,11 @@ func executeCommand(db database, settings map[string]string, command string) str
 			collectionName := poolAndSchemaAndCollection[2]
 
 			if strings.ToLower(words[0]) == "get" {
-				value, ok := db.Get(settings, key, poolName, schemaName, collectionName)
-				if ok == "ok" {
+				value := db.Get(settings, key, poolName, schemaName, collectionName)
+				if value == "" {
 					fmt.Printf("%v = %v\n", key, value)
 				}
-				return ok
+				return "error"
 			} else if strings.ToLower(words[0]) == "delete" {
 				return db.Delete(settings, key, poolName, schemaName, collectionName)
 			}
@@ -215,13 +202,14 @@ func executeCommand(db database, settings map[string]string, command string) str
 			schemaName := poolAndSchemaAndCollection[1]
 			collectionName := poolAndSchemaAndCollection[2]
 
-			result, ok := db.GetRange(settings, leftBound, rightBound, poolName, schemaName, collectionName)
-			if ok == "ok" {
+			result := db.GetRange(settings, leftBound, rightBound, poolName, schemaName, collectionName)
+			if len(result) != 0 {
 				for k, v := range result {
 					fmt.Printf("%v = %v\n", k, v)
 				}
+				return "ok"
 			}
-			return ok
+			return "error"
 		}
 	}
 
@@ -229,7 +217,7 @@ func executeCommand(db database, settings map[string]string, command string) str
 	return "error"
 }
 
-func executeFile(db database, settings map[string]string, filePath string) string {
+func executeFile(db *task0.Database, settings map[string]string, filePath string) string {
 	file, err := os.Open(filePath)
 	if err == nil {
 		scanner := bufio.NewScanner(file)
@@ -260,7 +248,6 @@ func main() {
 	args := os.Args[1:]
 
 	settings := make(map[string]string)
-	settings["DBtype"] = "BI"
 
 	db := task0.CreateDB()
 

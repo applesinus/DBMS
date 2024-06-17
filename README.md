@@ -11,7 +11,7 @@ deletePool <name>
 createScheme <name> in <pool name>
 deleteScheme <name> in <pool name>
 
-createCollection <name> in <pool name>.<scheme name>
+createCollection <type> <name> in <pool name>.<scheme name>
 deleteCollection <name> in <pool name>.<scheme name>
 
 set <key> <value> in <pool name>.<scheme name>.<collection name>
