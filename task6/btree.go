@@ -1,6 +1,9 @@
 package task6
 
-import "fmt"
+import (
+	"DBMS/task4"
+	"fmt"
+)
 
 type Btree struct {
 	root *nodeBtree
@@ -12,7 +15,7 @@ type nodeBtree struct {
 	isLeaf   bool
 	keys     []string
 	children []*nodeBtree
-	values   []interface{}
+	values   []task4.TrieWord
 }
 
 func (tree *Btree) search(key string) (*nodeBtree, int) {
@@ -85,7 +88,7 @@ func (node *nodeBtree) searchPLR(key string, parent *nodeBtree, left *nodeBtree,
 	return nil, -1, nil, nil, -1, nil, -1
 }
 
-func (tree *Btree) update(key string, value interface{}) string {
+func (tree *Btree) update(key string, value string) string {
 
 	if tree.root == nil {
 		return "does not exist"
@@ -96,20 +99,28 @@ func (tree *Btree) update(key string, value interface{}) string {
 		return "does not exist"
 	}
 
-	node.values[index] = value
+	newVal, ok := task4.Pool.Insert(value)
+	if ok != "ok" {
+		return "error"
+	}
+	node.values[index] = *newVal
 	return "ok"
 }
 
-func (tree *Btree) set(key string, value interface{}) string {
+func (tree *Btree) set(key string, value string) string {
 	if tree.root == nil {
 		tree.root = &nodeBtree{
 			isLeaf:   true,
 			keys:     make([]string, 0),
 			children: make([]*nodeBtree, 0),
-			values:   make([]interface{}, 0),
+			values:   make([]task4.TrieWord, 0),
 		}
 		tree.root.keys = append(tree.root.keys, key)
-		tree.root.values = append(tree.root.values, value)
+		newVal, ok := task4.Pool.Insert(value)
+		if ok != "ok" {
+			return "error"
+		}
+		tree.root.values = append(tree.root.values, *newVal)
 		return "ok"
 	}
 
@@ -123,7 +134,7 @@ func (tree *Btree) set(key string, value interface{}) string {
 		newRoot := &nodeBtree{
 			isLeaf:   false,
 			keys:     make([]string, 0),
-			values:   make([]interface{}, 0),
+			values:   make([]task4.TrieWord, 0),
 			children: make([]*nodeBtree, 0),
 		}
 		newRoot.children = append(newRoot.children, root)
@@ -137,18 +148,22 @@ func (tree *Btree) set(key string, value interface{}) string {
 	return "ok"
 }
 
-func (tree *Btree) insertNonFull(node *nodeBtree, key string, value interface{}) {
+func (tree *Btree) insertNonFull(node *nodeBtree, key string, value string) {
 	i := len(node.keys) - 1
 	if node.isLeaf {
 		node.keys = append(node.keys, "")
-		node.values = append(node.values, nil)
+		node.values = append(node.values, task4.TrieWord{})
 		for i >= 0 && key < node.keys[i] {
 			node.keys[i+1] = node.keys[i]
 			node.values[i+1] = node.values[i]
 			i--
 		}
 		node.keys[i+1] = key
-		node.values[i+1] = value
+		newVal, ok := task4.Pool.Insert(value)
+		if ok != "ok" {
+			return
+		}
+		node.values[i+1] = *newVal
 	} else {
 		for i >= 0 && key < node.keys[i] {
 			i--
@@ -170,11 +185,11 @@ func (tree *Btree) splitChild(parent *nodeBtree, i int, fullNode *nodeBtree) {
 		isLeaf:   fullNode.isLeaf,
 		keys:     make([]string, 0),
 		children: make([]*nodeBtree, 0),
-		values:   make([]interface{}, 0),
+		values:   make([]task4.TrieWord, 0),
 	}
 	parent.children = append(parent.children[:i+1], append([]*nodeBtree{newNode}, parent.children[i+1:]...)...)
 	parent.keys = append(parent.keys[:i], append([]string{fullNode.keys[t-1]}, parent.keys[i:]...)...)
-	parent.values = append(parent.values[:i], append([]interface{}{fullNode.values[t-1]}, parent.values[i:]...)...)
+	parent.values = append(parent.values[:i], append([]task4.TrieWord{fullNode.values[t-1]}, parent.values[i:]...)...)
 	newNode.keys = append(newNode.keys, fullNode.keys[t:]...)
 	newNode.values = append(newNode.values, fullNode.values[t:]...)
 	fullNode.keys = fullNode.keys[:t-1]
@@ -336,20 +351,26 @@ func (node *nodeBtree) printHelper() {
 	}
 }
 
-func (tree *Btree) get(key string) (interface{}, bool) {
+func (tree *Btree) get(key string) (string, bool) {
 	node, index := tree.root.search(key)
 	if node == nil || index == -1 {
-		return nil, false
+		return "", false
 	}
-	return node.values[index], true
+
+	val, ok := node.values[index].String()
+
+	if !ok {
+		return "", false
+	}
+	return val, true
 }
 
-func (tree *Btree) getRange(leftBound string, rightBound string) (*map[string]interface{}, string) {
-	result := make(map[string]interface{})
+func (tree *Btree) getRange(leftBound string, rightBound string) (*map[string]string, string) {
+	result := make(map[string]string)
 	return &result, tree.root.getRange(leftBound, rightBound, &result)
 }
 
-func (node *nodeBtree) getRange(leftBound string, rightBound string, result *map[string]interface{}) (ret string) {
+func (node *nodeBtree) getRange(leftBound string, rightBound string, result *map[string]string) (ret string) {
 	defer func() {
 		if ret != "ok" {
 			ret = "error"
@@ -377,7 +398,12 @@ func (node *nodeBtree) getRange(leftBound string, rightBound string, result *map
 
 	for i := 0; i < len(node.keys); i++ {
 		if node.keys[i] >= leftBound && node.keys[i] <= rightBound {
-			(*result)[node.keys[i]] = node.values[i]
+			val, ok := node.values[i].String()
+
+			if !ok {
+				return "error"
+			}
+			(*result)[node.keys[i]] = val
 		}
 	}
 

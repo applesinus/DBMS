@@ -1,6 +1,9 @@
 package task6
 
-import "fmt"
+import (
+	"DBMS/task4"
+	"fmt"
+)
 
 type Color bool
 
@@ -19,7 +22,7 @@ type nodeRB struct {
 	left   *nodeRB
 	right  *nodeRB
 	parent *nodeRB
-	value  interface{}
+	value  task4.TrieWord
 }
 
 // returns:
@@ -54,27 +57,35 @@ func (tree *RB) search(key string) (*nodeRB, *nodeRB) {
 	return nil, nil
 }
 
-func (tree *RB) update(key string, value interface{}) string {
+func (tree *RB) update(key string, value string) string {
 	node, _ := tree.search(key)
 
 	if node == nil {
 		return "does not exist"
 	}
 
-	node.value = value
+	newVal, ok := task4.Pool.Insert(value)
+	if ok != "ok" {
+		return "error"
+	}
+	node.value = *newVal
 	return "ok"
 }
 
-func (tree *RB) set(key string, value interface{}) string {
+func (tree *RB) set(key string, value string) string {
 	node, parent := tree.search(key)
 
 	if node != nil {
 		return "exist"
 	}
 
+	newVal, ok := task4.Pool.Insert(value)
+	if ok != "ok" {
+		return "error"
+	}
 	node = &nodeRB{
 		key:    key,
-		value:  value,
+		value:  *newVal,
 		parent: parent,
 		left:   nil,
 		right:  nil,
@@ -97,7 +108,6 @@ func (tree *RB) set(key string, value interface{}) string {
 }
 
 func (tree *RB) remove(key string) string {
-	fmt.Printf("removing %v\n", key)
 	node, _ := tree.search(key)
 
 	if node == nil {
@@ -117,7 +127,7 @@ func (tree *RB) remove(key string) string {
 			parent.right = nil
 			return tree.fixRemove(node, false)
 		}
-	} else if l == nil {
+	} else if l == nil && node != tree.root && r != nil {
 		wasLeft := parent.left == node
 		if parent == nil {
 			tree.root = r
@@ -130,7 +140,7 @@ func (tree *RB) remove(key string) string {
 		r.color = node.color
 
 		return tree.fixRemove(node, wasLeft)
-	} else if r == nil {
+	} else if r == nil && node != tree.root && l != nil {
 		wasLeft := parent.left == node
 		if parent == nil {
 			tree.root = l
@@ -144,13 +154,13 @@ func (tree *RB) remove(key string) string {
 
 		return tree.fixRemove(node, wasLeft)
 	} else {
-		min := tree.min(r)
-		if min == nil {
-			return "error"
+		toDelete := tree.min(r)
+		if toDelete == nil {
+			toDelete = tree.max(l)
 		}
-		newKey := min.key
-		newValue := min.value
-		res := tree.remove(min.key)
+		newKey := toDelete.key
+		newValue := toDelete.value
+		res := tree.remove(toDelete.key)
 		if res != "ok" {
 			return res
 		}
@@ -259,6 +269,18 @@ func (tree *RB) min(node *nodeRB) *nodeRB {
 	current := node
 	for current.left != nil {
 		current = current.left
+	}
+
+	return current
+}
+
+func (tree *RB) max(node *nodeRB) *nodeRB {
+	if node == nil {
+		return nil
+	}
+	current := node
+	for current.right != nil {
+		current = current.right
 	}
 
 	return current
@@ -431,20 +453,25 @@ func (node *nodeRB) printHelper() {
 	node.right.printHelper()
 }
 
-func (tree *RB) get(key string) (interface{}, bool) {
+func (tree *RB) get(key string) (string, bool) {
 	node, _ := tree.search(key)
 	if node == nil {
-		return nil, false
+		return "", false
 	}
-	return node.value, true
+
+	val, ok := node.value.String()
+	if !ok {
+		return "", false
+	}
+	return val, true
 }
 
-func (tree *RB) getRange(leftBound string, rightBound string) (*map[string]interface{}, string) {
-	result := make(map[string]interface{})
+func (tree *RB) getRange(leftBound string, rightBound string) (*map[string]string, string) {
+	result := make(map[string]string)
 	return &result, tree.root.getRange(leftBound, rightBound, &result)
 }
 
-func (node *nodeRB) getRange(leftBound string, rightBound string, result *map[string]interface{}) (ret string) {
+func (node *nodeRB) getRange(leftBound string, rightBound string, result *map[string]string) (ret string) {
 	defer func() {
 		if ret != "ok" {
 			ret = "error"
@@ -454,7 +481,11 @@ func (node *nodeRB) getRange(leftBound string, rightBound string, result *map[st
 	ret = "start"
 
 	if node.key >= leftBound && node.key <= rightBound {
-		(*result)[node.key] = node.value
+		val, ok := node.value.String()
+		if !ok {
+			return
+		}
+		(*result)[node.key] = val
 	}
 
 	if node.left != nil && node.key >= leftBound {

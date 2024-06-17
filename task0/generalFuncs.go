@@ -1,6 +1,7 @@
 package task0
 
 import (
+	"DBMS/task4"
 	"DBMS/task6"
 	"fmt"
 )
@@ -89,7 +90,7 @@ func (db *Database) CreateCollection(settings map[string]string, name string, co
 	if collType == "BI" {
 		db.pools[pool].schema[schema].collection[name] = &CollectionBI{
 			name:  name,
-			value: make(map[string]string),
+			value: make(map[string]task4.TrieWord),
 		}
 		return "ok"
 	}

@@ -1,6 +1,9 @@
 package task6
 
-import "fmt"
+import (
+	"DBMS/task4"
+	"fmt"
+)
 
 type AVL struct {
 	root *nodeAVL
@@ -8,7 +11,7 @@ type AVL struct {
 
 type nodeAVL struct {
 	key    string
-	value  interface{}
+	value  task4.TrieWord
 	left   *nodeAVL
 	right  *nodeAVL
 	parent *nodeAVL
@@ -231,16 +234,22 @@ func (tree *AVL) changeHeights(node *nodeAVL) string {
 	return "ok"
 }
 
-func (tree *AVL) set(key string, value interface{}) string {
+func (tree *AVL) set(key string, value string) string {
 	node, parent := tree.search(key)
 
 	if node != nil {
 		return "exist"
 	}
 
+	newVal, ok := task4.Pool.Insert(value)
+
+	if ok != "ok" {
+		return "error"
+	}
+
 	node = &nodeAVL{
 		key:    key,
-		value:  value,
+		value:  *newVal,
 		parent: parent,
 		left:   nil,
 		right:  nil,
@@ -261,14 +270,20 @@ func (tree *AVL) set(key string, value interface{}) string {
 	return tree.changeHeights(node.parent)
 }
 
-func (tree *AVL) update(key string, value interface{}) string {
+func (tree *AVL) update(key string, value string) string {
 	node, _ := tree.search(key)
 
 	if node == nil {
 		return "does not exist"
 	}
 
-	node.value = value
+	newVal, ok := task4.Pool.Insert(value)
+
+	if ok != "ok" {
+		return "error"
+	}
+
+	node.value = *newVal
 	return "ok"
 }
 
@@ -394,20 +409,24 @@ func (node *nodeAVL) printHelper() {
 	node.right.printHelper()
 }
 
-func (tree *AVL) get(key string) (interface{}, bool) {
+func (tree *AVL) get(key string) (string, bool) {
 	node, _ := tree.search(key)
 	if node == nil {
-		return nil, false
+		return "", false
 	}
-	return node.value, true
+	val, ok := node.value.String()
+	if !ok {
+		return "", false
+	}
+	return val, true
 }
 
-func (tree *AVL) getRange(leftBound string, rightBound string) (*map[string]interface{}, string) {
-	result := make(map[string]interface{})
+func (tree *AVL) getRange(leftBound string, rightBound string) (*map[string]string, string) {
+	result := make(map[string]string)
 	return &result, tree.root.getRange(leftBound, rightBound, &result)
 }
 
-func (node *nodeAVL) getRange(leftBound string, rightBound string, result *map[string]interface{}) (ret string) {
+func (node *nodeAVL) getRange(leftBound string, rightBound string, result *map[string]string) (ret string) {
 	defer func() {
 		if ret != "ok" {
 			ret = "error"
@@ -417,7 +436,11 @@ func (node *nodeAVL) getRange(leftBound string, rightBound string, result *map[s
 	ret = "start"
 
 	if node.key >= leftBound && node.key <= rightBound {
-		(*result)[node.key] = node.value
+		val, ok := node.value.String()
+		if !ok {
+			return
+		}
+		(*result)[node.key] = val
 	}
 
 	if node.left != nil && node.key >= leftBound {

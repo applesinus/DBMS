@@ -7,10 +7,10 @@ import (
 
 type tree interface {
 	print()
-	set(key string, value interface{}) string
-	update(key string, value interface{}) string
-	get(key string) (interface{}, bool)
-	getRange(leftBound string, rightBound string) (*map[string]interface{}, string)
+	set(key string, value string) string
+	update(key string, value string) string
+	get(key string) (string, bool)
+	getRange(leftBound string, rightBound string) (*map[string]string, string)
 	remove(key string) string
 }
 

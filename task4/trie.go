@@ -9,6 +9,8 @@ type Trie struct {
 	root *NodeTrie
 }
 
+var Pool = &Trie{root: nil}
+
 type NodeTrie struct {
 	isEnd bool
 	value byte
@@ -19,7 +21,7 @@ type TrieWord struct {
 	chars []*NodeTrie
 }
 
-func (t *Trie) insert(word string) (*TrieWord, string) {
+func (t *Trie) Insert(word string) (*TrieWord, string) {
 	if t.root == nil {
 		t.root = &NodeTrie{}
 	}
@@ -55,7 +57,7 @@ func (node *NodeTrie) insert(word string, prev *TrieWord) (*TrieWord, string) {
 	return newNode.insert(word[1:], prev)
 }
 
-func (trieWord *TrieWord) String() (res string, ok bool) {
+func (trieWord TrieWord) String() (res string, ok bool) {
 	ok = true
 
 	defer func(ok *bool) {

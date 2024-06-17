@@ -1,6 +1,7 @@
 package task0
 
 import (
+	"DBMS/task4"
 	"fmt"
 )
 
@@ -10,7 +11,11 @@ func (collection *CollectionBI) Set(key string, value string) string {
 		return "error"
 	}
 
-	collection.value[key] = value
+	word, ok := task4.Pool.Insert(value)
+	if ok != "ok" {
+		return "error"
+	}
+	collection.value[key] = *word
 
 	return "ok"
 }
@@ -21,7 +26,11 @@ func (collection *CollectionBI) Update(key string, value string) string {
 		return "error"
 	}
 
-	collection.value[key] = value
+	word, ok := task4.Pool.Insert(value)
+	if ok != "ok" {
+		return "error"
+	}
+	collection.value[key] = *word
 
 	return "ok"
 }
@@ -32,14 +41,24 @@ func (collection *CollectionBI) Get(key string) (string, string) {
 		return "", "error"
 	}
 
-	return collection.value[key], "ok"
+	str, ok := collection.value[key].String()
+
+	if !ok {
+		return "", "error"
+	}
+
+	return str, "ok"
 }
 
 func (collection *CollectionBI) GetRange(leftBound string, rightBound string) (*map[string]string, string) {
 	result := make(map[string]string, 0)
 	for k, v := range collection.value {
 		if k >= leftBound && k <= rightBound {
-			result[k] = v
+			res, ok := v.String()
+			if !ok {
+				return nil, "error"
+			}
+			result[k] = res
 		}
 	}
 

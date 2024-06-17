@@ -1,5 +1,9 @@
 package task0
 
+import (
+	"DBMS/task4"
+)
+
 // collectionInterface - basic collection interface
 type CollectionInterface interface {
 	Set(key string, value string) string
@@ -7,12 +11,6 @@ type CollectionInterface interface {
 	Get(key string) (string, string)
 	GetRange(leftBound string, rightBound string) (*map[string]string, string)
 	Delete(key string) string
-}
-
-// CollectionBI - Built-in representation of collection
-type CollectionBI struct {
-	name  string
-	value map[string]string
 }
 
 // Database
@@ -30,4 +28,10 @@ type Pool struct {
 type Schema struct {
 	name       string
 	collection map[string]CollectionInterface
+}
+
+// CollectionBI - Built-in representation of collection
+type CollectionBI struct {
+	name  string
+	value map[string]task4.TrieWord
 }
