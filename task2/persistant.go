@@ -44,10 +44,11 @@ func jumpToState(coll collection, index int) interfaces.CollectionInterface {
 		// Set and Update value
 		case "set", "update":
 			key := words[1]
+			secondaryKey := words[2]
 			value := strings.Join(words[2:len(words)-2], " ")
 
 			if strings.ToLower(words[0]) == "set" {
-				temp.Set(key, value)
+				temp.Set(key, secondaryKey, value)
 			} else if strings.ToLower(words[0]) == "update" {
 				temp.Update(key, value)
 			}

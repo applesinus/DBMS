@@ -6,20 +6,28 @@ import (
 )
 
 type AVL struct {
-	root *nodeAVL
+	root          *nodeAVL
+	secondaryRoot *nodeAVL
 }
 
 type nodeAVL struct {
 	key    string
-	value  task4.TrieWord
 	left   *nodeAVL
 	right  *nodeAVL
 	parent *nodeAVL
 	height int
+
+	secondaryKey    string
+	secondaryLeft   *nodeAVL
+	secondaryRight  *nodeAVL
+	secondaryParent *nodeAVL
+	secondaryHeight int
+
+	value task4.TrieWord
 }
 
 func (tree AVL) Copy() tree {
-	newTree := &AVL{root: nil}
+	newTree := &AVL{root: nil, secondaryRoot: nil}
 	newTree.root = tree.root.copy()
 	return newTree
 }
@@ -31,11 +39,18 @@ func (node *nodeAVL) copy() *nodeAVL {
 
 	return &nodeAVL{
 		key:    node.key,
-		value:  node.value,
 		left:   node.left.copy(),
 		right:  node.right.copy(),
 		parent: node.parent.copy(),
 		height: node.height,
+
+		secondaryKey:    node.secondaryKey,
+		secondaryLeft:   node.secondaryLeft.copy(),
+		secondaryRight:  node.secondaryRight.copy(),
+		secondaryParent: node.secondaryParent.copy(),
+		secondaryHeight: node.secondaryHeight,
+
+		value: node.value,
 	}
 }
 
@@ -255,10 +270,11 @@ func (tree *AVL) changeHeights(node *nodeAVL) string {
 	return "ok"
 }
 
-func (tree *AVL) set(key string, value string) string {
+func (tree *AVL) set(key string, secondaryKey string, value string) string {
 	node, parent := tree.search(key)
+	secondaryNode, secondaryParent := tree.searchBySecondaryKey(secondaryKey)
 
-	if node != nil {
+	if node != nil || secondaryNode != nil {
 		return "exist"
 	}
 
@@ -270,11 +286,18 @@ func (tree *AVL) set(key string, value string) string {
 
 	node = &nodeAVL{
 		key:    key,
-		value:  *newVal,
 		parent: parent,
 		left:   nil,
 		right:  nil,
 		height: 1,
+
+		secondaryKey:    secondaryKey,
+		secondaryLeft:   nil,
+		secondaryRight:  nil,
+		secondaryParent: secondaryParent,
+		secondaryHeight: 1,
+
+		value: *newVal,
 	}
 
 	if parent == nil {
@@ -313,8 +336,14 @@ func (tree *AVL) remove(key string) string {
 	if node == nil {
 		return "does not exist"
 	}
-	parent := node.parent
 
+	response := tree.secondaryRemove(key, node)
+
+	if response != "ok" {
+		return response
+	}
+
+	parent := node.parent
 	if node.left == nil && node.right == nil {
 		// Node with no children
 		if parent == nil {
@@ -414,9 +443,9 @@ func (node *nodeAVL) printHelper() {
 	}
 
 	if node.parent != nil {
-		fmt.Printf("Node: %v:%v, h=%v. (parent: %v, ", node.key, node.value, node.height, node.parent.key)
+		fmt.Printf("Node: %v/%v:%v, h=%v. (parent: %v, ", node.key, node.secondaryKey, node.value, node.height, node.parent.key)
 	} else {
-		fmt.Printf("Node: %v:%v h=%v. (parent: nil, ", node.key, node.value, node.height)
+		fmt.Printf("Node: %v/%v:%v h=%v. (parent: nil, ", node.key, node.secondaryKey, node.value, node.height)
 	}
 	if node.left != nil {
 		fmt.Printf("Left: %v, ", node.left.key)

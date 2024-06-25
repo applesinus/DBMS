@@ -14,9 +14,10 @@ deleteScheme <name> in <pool name>
 createCollection <type> <name> in <pool name>.<scheme name>
 deleteCollection <name> in <pool name>.<scheme name>
 
-set <key> <value> in <pool name>.<scheme name>.<collection name>
+set <key> <secondaryKey> <value> in <pool name>.<scheme name>.<collection name>
 update <key> <value> in <pool name>.<scheme name>.<collection name>
 get <key> in <pool name>.<scheme name>.<collection name>
+getSecondary <secondaryKey> in <pool name>.<scheme name>.<collection name>
 getRange <key minimum> <key maximum> in <pool name>.<scheme name>.<collection name>
 getAt <time> <key> in <pool name>.<scheme name>.<collection name>
 delete <key> in <pool name>.<scheme name>.<collection name>

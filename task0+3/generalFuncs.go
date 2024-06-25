@@ -2,8 +2,7 @@ package task0
 
 import (
 	"DBMS/interfaces"
-	"DBMS/task4"
-	"DBMS/task6"
+	"DBMS/task6+3"
 	"fmt"
 )
 
@@ -91,7 +90,7 @@ func (db *Database) CreateCollection(settings map[string]string, name string, co
 	if collType == "BI" {
 		db.pools[pool].schema[schema].collection[name] = &CollectionBI{
 			name:  name,
-			value: make(map[string]task4.TrieWord),
+			value: make([]Value, 0),
 		}
 		return "ok"
 	}
@@ -145,6 +144,17 @@ func (db *Database) Get(settings map[string]string, key string, pool string, sch
 	return res
 }
 
+func (db *Database) GetBySecondaryKey(settings map[string]string, secondaryKey string, pool string, schema string, coll string) string {
+	if !db.checkCollection(pool, schema, coll) {
+		return ""
+	}
+	res, ok := db.pools[pool].schema[schema].collection[coll].GetBySecondaryKey(secondaryKey)
+	if ok != "ok" {
+		return ""
+	}
+	return res
+}
+
 func (db *Database) GetRange(settings map[string]string, leftBound string, rightBound string, pool string, schema string, coll string) *map[string]string {
 	if !db.checkCollection(pool, schema, coll) {
 		ret := make(map[string]string)
@@ -158,11 +168,24 @@ func (db *Database) GetRange(settings map[string]string, leftBound string, right
 	return res
 }
 
-func (db *Database) Set(settings map[string]string, key string, value string, pool string, schema string, coll string) string {
+func (db *Database) GetRangeBySecondaryKey(settings map[string]string, leftBound string, rightBound string, pool string, schema string, coll string) *map[string]string {
+	if !db.checkCollection(pool, schema, coll) {
+		ret := make(map[string]string)
+		return &ret
+	}
+	res, ok := db.pools[pool].schema[schema].collection[coll].GetRangeBySecondaryKey(leftBound, rightBound)
+	if ok != "ok" {
+		ret := make(map[string]string)
+		return &ret
+	}
+	return res
+}
+
+func (db *Database) Set(settings map[string]string, key string, secondaryKey string, value string, pool string, schema string, coll string) string {
 	if !db.checkCollection(pool, schema, coll) {
 		return "error"
 	}
-	ok := db.pools[pool].schema[schema].collection[coll].Set(key, value)
+	ok := db.pools[pool].schema[schema].collection[coll].Set(key, secondaryKey, value)
 	if ok != "ok" {
 		return "error"
 	}

@@ -25,5 +25,11 @@ type Schema struct {
 // CollectionBI - Built-in representation of collection
 type CollectionBI struct {
 	name  string
-	value map[string]task4.TrieWord
+	value []Value
+}
+
+type Value struct {
+	key          string
+	secondaryKey string
+	value        task4.TrieWord
 }

@@ -2,12 +2,13 @@ createPool pool
 createSchema schema in pool
 createCollection Btree collection in pool.schema
 
-set thisYear 2024 in pool.schema.collection
-set lastYear 2023 in pool.schema.collection
-set justYear 2010 in pool.schema.collection
+set thisYear ty 2024 in pool.schema.collection
+set lastYear ly 2023 in pool.schema.collection
+set justYear jy 2010 in pool.schema.collection
 update thisYear 2011 in pool.schema.collection
 
 get thisYear in pool.schema.collection
+getSecondary ty in pool.schema.collection
 getRange l y in pool.schema.collection
 getAt 2024-06-25 10:00:00.000000 MSK thisYear in pool.schema.collection
 

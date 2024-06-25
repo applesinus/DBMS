@@ -1,7 +1,7 @@
 package main
 
 import (
-	"DBMS/task0"
+	"DBMS/task0+3"
 	"DBMS/task2"
 	"bufio"
 	"fmt"
@@ -155,7 +155,7 @@ func executeCommand(db *task0.Database, settings map[string]string, command stri
 			return response
 
 		// Set and Update value
-		case "set", "update":
+		case "update":
 			if len(words) < 5 {
 				fmt.Println("Too few arguments")
 				return "error"
@@ -176,28 +176,45 @@ func executeCommand(db *task0.Database, settings map[string]string, command stri
 			schemaName := poolAndSchemaAndCollection[1]
 			collectionName := poolAndSchemaAndCollection[2]
 
-			if strings.ToLower(words[0]) == "set" {
-				response := db.Set(settings, key, value, poolName, schemaName, collectionName)
-				if response != "ok" {
-					return response
-				}
-				if settings["persistant"] == "on" {
-					task2.AddCommand(collectionName, command)
-				}
-				return response
-			} else if strings.ToLower(words[0]) == "update" {
-				response := db.Update(settings, key, value, poolName, schemaName, collectionName)
-				if response != "ok" {
-					return response
-				}
-				if settings["persistant"] == "on" {
-					task2.AddCommand(collectionName, command)
-				}
+			response := db.Update(settings, key, value, poolName, schemaName, collectionName)
+			if response != "ok" {
 				return response
 			}
+			if settings["persistant"] == "on" {
+				task2.AddCommand(collectionName, command)
+			}
+			return response
 
-			fmt.Println("Wrong command")
-			return "error"
+		case "set":
+			if len(words) < 6 {
+				fmt.Println("Too few arguments")
+				return "error"
+			}
+
+			key := words[1]
+			secondaryKey := words[2]
+			value := strings.Join(words[3:len(words)-2], " ")
+			if words[len(words)-2] != "in" {
+				fmt.Println("Wrong command on collection name declaration")
+				return "error"
+			}
+			poolAndSchemaAndCollection := strings.Split(words[len(words)-1], ".")
+			if len(poolAndSchemaAndCollection) != 3 {
+				fmt.Println("Wrong command on collection name declaration")
+				return "error"
+			}
+			poolName := poolAndSchemaAndCollection[0]
+			schemaName := poolAndSchemaAndCollection[1]
+			collectionName := poolAndSchemaAndCollection[2]
+
+			response := db.Set(settings, key, secondaryKey, value, poolName, schemaName, collectionName)
+			if response != "ok" {
+				return response
+			}
+			if settings["persistant"] == "on" {
+				task2.AddCommand(collectionName, command)
+			}
+			return response
 
 		// Get and Delete value
 		case "get", "delete":

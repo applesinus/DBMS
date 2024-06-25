@@ -13,7 +13,8 @@ const (
 )
 
 type RB struct {
-	root *nodeRB
+	root          *nodeRB
+	secondaryRoot *nodeRB
 }
 
 type nodeRB struct {
@@ -22,12 +23,20 @@ type nodeRB struct {
 	left   *nodeRB
 	right  *nodeRB
 	parent *nodeRB
-	value  task4.TrieWord
+
+	secondaryColor  Color
+	secondaryKey    string
+	secondaryLeft   *nodeRB
+	secondaryRight  *nodeRB
+	secondaryParent *nodeRB
+
+	value task4.TrieWord
 }
 
 func (tree RB) Copy() tree {
-	newTree := &RB{root: nil}
+	newTree := &RB{root: nil, secondaryRoot: nil}
 	newTree.root = tree.root.copy()
+	newTree.secondaryRoot = tree.secondaryRoot.copy()
 	return newTree
 }
 
@@ -42,7 +51,14 @@ func (node *nodeRB) copy() *nodeRB {
 		left:   node.left.copy(),
 		right:  node.right.copy(),
 		parent: node.parent.copy(),
-		value:  node.value,
+
+		secondaryColor:  node.secondaryColor,
+		secondaryKey:    node.secondaryKey,
+		secondaryLeft:   node.secondaryLeft.copy(),
+		secondaryRight:  node.secondaryRight.copy(),
+		secondaryParent: node.secondaryParent.copy(),
+
+		value: node.value,
 	}
 }
 
@@ -93,10 +109,11 @@ func (tree *RB) update(key string, value string) string {
 	return "ok"
 }
 
-func (tree *RB) set(key string, value string) string {
+func (tree *RB) set(key string, secondaryKey string, value string) string {
 	node, parent := tree.search(key)
+	secondaryNode, secondaryParent := tree.searchBySecondaryKey(secondaryKey)
 
-	if node != nil {
+	if node != nil || secondaryNode != nil {
 		return "exist"
 	}
 
@@ -106,15 +123,27 @@ func (tree *RB) set(key string, value string) string {
 	}
 	node = &nodeRB{
 		key:    key,
-		value:  *newVal,
 		parent: parent,
 		left:   nil,
 		right:  nil,
 		color:  Red,
+
+		secondaryKey:    secondaryKey,
+		secondaryParent: secondaryParent,
+		secondaryLeft:   nil,
+		secondaryRight:  nil,
+		secondaryColor:  Red,
+
+		value: *newVal,
 	}
 
 	if parent == nil {
 		tree.root = node
+		node.color = Black
+		return "ok"
+	}
+	if secondaryParent == nil {
+		tree.secondaryRoot = node
 		node.color = Black
 		return "ok"
 	}
@@ -124,12 +153,27 @@ func (tree *RB) set(key string, value string) string {
 	} else {
 		parent.right = node
 	}
+	if secondaryKey < secondaryParent.key {
+		secondaryParent.secondaryLeft = node
+	} else {
+		secondaryParent.secondaryRight = node
+	}
+
+	response := tree.fixSecondaryInsert(node)
+	if response != "ok" {
+		return response
+	}
 
 	return tree.fixInsert(node)
 }
 
 func (tree *RB) remove(key string) string {
 	node, _ := tree.search(key)
+
+	response := tree.secondaryRemove(node.secondaryKey)
+	if response != "ok" {
+		return response
+	}
 
 	if node == nil {
 		return "does not exist"
@@ -458,9 +502,9 @@ func (node *nodeRB) printHelper() {
 		c = "Black"
 	}
 	if node.parent != nil {
-		fmt.Printf("Node: %v:%v, c=%v. (parent: %v, ", node.key, node.value, c, node.parent.key)
+		fmt.Printf("Node: %v/%v:%v, c=%v. (parent: %v, ", node.key, node.secondaryKey, node.value, c, node.parent.key)
 	} else {
-		fmt.Printf("Node: %v:%v c=%v. (parent: nil, ", node.key, node.value, c)
+		fmt.Printf("Node: %v/%v:%v c=%v. (parent: nil, ", node.key, node.secondaryKey, node.value, c)
 	}
 	if node.left != nil {
 		fmt.Printf("Left: %v, ", node.left.key)
