@@ -127,6 +127,13 @@ func (db *Database) DeleteCollection(settings map[string]string, name string, po
 	return "ok"
 }
 
+func (db *Database) GetCollection(settings map[string]string, pool string, schema string, coll string) interfaces.CollectionInterface {
+	if !db.checkCollection(pool, schema, coll) {
+		return nil
+	}
+	return db.pools[pool].schema[schema].collection[coll]
+}
+
 func (db *Database) Get(settings map[string]string, key string, pool string, schema string, coll string) string {
 	if !db.checkCollection(pool, schema, coll) {
 		return ""

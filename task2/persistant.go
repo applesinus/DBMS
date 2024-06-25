@@ -2,21 +2,19 @@ package task2
 
 import (
 	"DBMS/interfaces"
-	"DBMS/task0"
-	"fmt"
 	"strings"
 	"time"
 )
 
 type collection struct {
-	firstState task0.CollectionInterface
+	firstState interfaces.CollectionInterface
 	commands   []string
 	timings    []time.Time
 }
 
 var PersistantCollections = make(map[string]collection)
 
-func SaveCollection(collName string, collElements task0.CollectionInterface) {
+func SaveCollection(collName string, collElements interfaces.CollectionInterface) {
 	PersistantCollections[collName] = collection{
 		firstState: collElements,
 		commands:   make([]string, 0),
@@ -25,7 +23,7 @@ func SaveCollection(collName string, collElements task0.CollectionInterface) {
 }
 
 func DeleteCollection(collName string) {
-	delete(PersistantCollections, collName)
+	AddCommand(collName, "deleteCollection "+collName)
 }
 
 func AddCommand(collName string, command string) {
@@ -38,9 +36,9 @@ func AddCommand(collName string, command string) {
 }
 
 func jumpToState(coll collection, index int) interfaces.CollectionInterface {
-	temp := coll.firstState.
+	temp := coll.firstState.Copy()
 
-	for i := 0; i < index; i++ {
+	for i := 0; i <= index; i++ {
 		words := strings.Fields(coll.commands[i])
 		switch strings.ToLower(words[0]) {
 		// Set and Update value
@@ -51,84 +49,21 @@ func jumpToState(coll collection, index int) interfaces.CollectionInterface {
 			if strings.ToLower(words[0]) == "set" {
 				temp.Set(key, value)
 			} else if strings.ToLower(words[0]) == "update" {
-				return db.Update(settings, key, value, poolName, schemaName, collectionName)
+				temp.Update(key, value)
 			}
-
-			fmt.Println("Wrong command")
-			return "error"
 
 		// Get and Delete value
-		case "get", "delete":
-			if len(words) < 4 {
-				fmt.Println("Too few arguments")
-				return "error"
-			}
-
+		case "delete":
 			key := words[1]
-			if words[2] != "in" {
-				fmt.Println("Wrong command on collection name declaration")
-				return "error"
-			}
-			poolAndSchemaAndCollection := strings.Split(words[len(words)-1], ".")
-			if len(poolAndSchemaAndCollection) != 3 {
-				fmt.Println("Wrong command on collection name declaration")
-				return "error"
-			}
-			poolName := poolAndSchemaAndCollection[0]
-			schemaName := poolAndSchemaAndCollection[1]
-			collectionName := poolAndSchemaAndCollection[2]
-
-			if strings.ToLower(words[0]) == "get" {
-				value := db.Get(settings, key, poolName, schemaName, collectionName)
-				if value != "" {
-					fmt.Printf("%v = %v\n", key, value)
-					return "ok"
-				}
-				return "error"
-			} else if strings.ToLower(words[0]) == "delete" {
-				return db.Delete(settings, key, poolName, schemaName, collectionName)
-			}
-
-			fmt.Println("Wrong command")
-			return "error"
-
-		// Get range
-		case "getrange":
-			if len(words) < 5 {
-				fmt.Println("Too few arguments")
-				return "error"
-			}
-
-			leftBound := words[1]
-			rightBound := words[2]
-			if words[3] != "in" {
-				fmt.Println("Wrong command on collection name declaration")
-				return "error"
-			}
-			poolAndSchemaAndCollection := strings.Split(words[len(words)-1], ".")
-			if len(poolAndSchemaAndCollection) != 3 {
-				fmt.Println("Wrong command on collection name declaration")
-				return "error"
-			}
-			poolName := poolAndSchemaAndCollection[0]
-			schemaName := poolAndSchemaAndCollection[1]
-			collectionName := poolAndSchemaAndCollection[2]
-
-			result := db.GetRange(settings, leftBound, rightBound, poolName, schemaName, collectionName)
-			if result != nil && len(*result) != 0 {
-				for k, v := range *result {
-					fmt.Printf("%v = %v\n", k, v)
-				}
-				return "ok"
-			}
-			return "error"
+			temp.Delete(key)
 		}
 	}
+
+	return temp
 }
 
 func GetValueByTime(collName string, key string, timeStamp time.Time) string {
 	coll := PersistantCollections[collName]
-	temp := coll.firstState
 
 	index := 0
 	for ; index < len(coll.timings); index++ {
@@ -136,8 +71,22 @@ func GetValueByTime(collName string, key string, timeStamp time.Time) string {
 			break
 		}
 	}
-	if index != 0 {
-		index--
+	if index == 0 {
+		return "collection was created at " + coll.timings[index].String()
 	}
 
+	index--
+
+	if coll.commands[index] == "deleteCollection "+collName {
+		return "collection has been deleted at " + coll.timings[index].String()
+	}
+
+	temp := jumpToState(coll, index)
+	result, response := temp.Get(key)
+
+	if response != "ok" {
+		return key + "did not exist at " + timeStamp.String()
+	}
+
+	return result
 }

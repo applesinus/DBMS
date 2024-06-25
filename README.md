@@ -18,5 +18,6 @@ set <key> <value> in <pool name>.<scheme name>.<collection name>
 update <key> <value> in <pool name>.<scheme name>.<collection name>
 get <key> in <pool name>.<scheme name>.<collection name>
 getRange <key minimum> <key maximum> in <pool name>.<scheme name>.<collection name>
+getAt <time> <key> in <pool name>.<scheme name>.<collection name>
 delete <key> in <pool name>.<scheme name>.<collection name>
 ```
