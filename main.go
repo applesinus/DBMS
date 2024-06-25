@@ -4,6 +4,7 @@ import (
 	"DBMS/task0+3"
 	"DBMS/task2"
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -361,23 +362,25 @@ func help() {
 }
 
 func main() {
-	args := os.Args[1:]
+	filepath := flag.String("f", "", "initial filepath")
+	persistant := flag.Bool("p", false, "persistant mode")
+	flag.Parse()
 
 	settings := make(map[string]string)
-	settings["persistant"] = "on"
+	if *persistant {
+		settings["persistant"] = "on"
+	}
 
 	db := task0.CreateDB()
 
 	// if there's a filename
-	if len(args) == 1 {
-		ret := executeFile(db, settings, args[0])
+	if *filepath != "" {
+		ret := executeFile(db, settings, *filepath)
 		if ret == "error" {
 			fmt.Println("Could not execute file")
 		} else if ret == "exit" {
 			return
 		}
-	} else if len(args) > 1 {
-		fmt.Println("Too many arguments, only one is allowed")
 	}
 
 	help()
