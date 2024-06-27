@@ -20,17 +20,12 @@ type RB struct {
 type nodeRB struct {
 	color  Color
 	key    string
+	altKey *nodeRB
 	left   *nodeRB
 	right  *nodeRB
 	parent *nodeRB
 
-	secondaryColor  Color
-	secondaryKey    string
-	secondaryLeft   *nodeRB
-	secondaryRight  *nodeRB
-	secondaryParent *nodeRB
-
-	value task4.TrieWord
+	value *task4.TrieWord
 }
 
 func (tree RB) Copy() tree {
@@ -48,17 +43,11 @@ func (node *nodeRB) copy() *nodeRB {
 	return &nodeRB{
 		color:  node.color,
 		key:    node.key,
+		altKey: node.altKey.copy(),
 		left:   node.left.copy(),
 		right:  node.right.copy(),
 		parent: node.parent.copy(),
-
-		secondaryColor:  node.secondaryColor,
-		secondaryKey:    node.secondaryKey,
-		secondaryLeft:   node.secondaryLeft.copy(),
-		secondaryRight:  node.secondaryRight.copy(),
-		secondaryParent: node.secondaryParent.copy(),
-
-		value: node.value,
+		value:  node.value,
 	}
 }
 
@@ -69,12 +58,11 @@ func (node *nodeRB) copy() *nodeRB {
 // {nil, parent node} if not found
 //
 // {nil, nil} if tree is empty (or other error)
-func (tree *RB) search(key string) (*nodeRB, *nodeRB) {
-	if tree.root == nil {
+func (tree *RB) search(node *nodeRB, key string) (*nodeRB, *nodeRB) {
+	if node == nil {
 		return nil, nil
 	}
 
-	node := tree.root
 	for node != nil {
 		if key < node.key {
 			if node.left == nil {
@@ -95,7 +83,8 @@ func (tree *RB) search(key string) (*nodeRB, *nodeRB) {
 }
 
 func (tree *RB) update(key string, value string) string {
-	node, _ := tree.search(key)
+	node, _ := tree.search(tree.root, key)
+	secondaryNode := node.altKey
 
 	if node == nil {
 		return "does not exist"
@@ -105,13 +94,15 @@ func (tree *RB) update(key string, value string) string {
 	if ok != "ok" {
 		return "error"
 	}
-	node.value = *newVal
+
+	secondaryNode.value = newVal
+	node.value = newVal
 	return "ok"
 }
 
 func (tree *RB) set(key string, secondaryKey string, value string) string {
-	node, parent := tree.search(key)
-	secondaryNode, secondaryParent := tree.searchBySecondaryKey(secondaryKey)
+	node, parent := tree.search(tree.root, key)
+	secondaryNode, secondaryParent := tree.search(tree.secondaryRoot, secondaryKey)
 
 	if node != nil || secondaryNode != nil {
 		return "exist"
@@ -124,26 +115,29 @@ func (tree *RB) set(key string, secondaryKey string, value string) string {
 	node = &nodeRB{
 		key:    key,
 		parent: parent,
+		altKey: nil,
 		left:   nil,
 		right:  nil,
 		color:  Red,
-
-		secondaryKey:    secondaryKey,
-		secondaryParent: secondaryParent,
-		secondaryLeft:   nil,
-		secondaryRight:  nil,
-		secondaryColor:  Red,
-
-		value: *newVal,
+		value:  newVal,
 	}
+	secondaryNode = &nodeRB{
+		key:    secondaryKey,
+		parent: secondaryParent,
+		altKey: node,
+		left:   nil,
+		right:  nil,
+		color:  Red,
+		value:  newVal,
+	}
+	node.altKey = secondaryNode
 
 	if parent == nil {
 		tree.root = node
 		node.color = Black
-		return "ok"
 	}
 	if secondaryParent == nil {
-		tree.secondaryRoot = node
+		tree.secondaryRoot = secondaryNode
 		node.color = Black
 		return "ok"
 	}
@@ -154,48 +148,54 @@ func (tree *RB) set(key string, secondaryKey string, value string) string {
 		parent.right = node
 	}
 	if secondaryKey < secondaryParent.key {
-		secondaryParent.secondaryLeft = node
+		secondaryParent.left = secondaryNode
 	} else {
-		secondaryParent.secondaryRight = node
+		secondaryParent.right = secondaryNode
 	}
 
-	response := tree.fixSecondaryInsert(node)
+	response := tree.fixInsert(tree.secondaryRoot, secondaryNode)
 	if response != "ok" {
 		return response
 	}
 
-	return tree.fixInsert(node)
+	return tree.fixInsert(tree.root, node)
 }
 
 func (tree *RB) remove(key string) string {
-	node, _ := tree.search(key)
-
-	response := tree.secondaryRemove(node.secondaryKey)
-	if response != "ok" {
-		return response
-	}
+	node, _ := tree.search(tree.root, key)
+	secondaryNode := node.altKey
+	secondaryParent := secondaryNode.parent
 
 	if node == nil {
 		return "does not exist"
 	}
 	parent := node.parent
 
+	response := tree.remover(tree.root, node, parent)
+	if response != "ok" {
+		return response
+	}
+
+	return tree.remover(tree.secondaryRoot, secondaryNode, secondaryParent)
+}
+
+func (tree *RB) remover(root, node, parent *nodeRB) string {
 	l, r := node.left, node.right
 	if l == nil && r == nil {
 		if parent == nil {
-			tree.root = nil
+			root = nil
 			return "ok"
 		} else if parent.left == node {
 			parent.left = nil
-			return tree.fixRemove(node, true)
+			return tree.fixRemove(root, node, true)
 		} else {
 			parent.right = nil
-			return tree.fixRemove(node, false)
+			return tree.fixRemove(root, node, false)
 		}
-	} else if l == nil && node != tree.root && r != nil {
+	} else if l == nil && node != root && r != nil {
 		wasLeft := parent.left == node
 		if parent == nil {
-			tree.root = r
+			root = r
 		} else if parent.left == node {
 			parent.left = r
 		} else {
@@ -204,11 +204,11 @@ func (tree *RB) remove(key string) string {
 		r.parent = parent
 		r.color = node.color
 
-		return tree.fixRemove(node, wasLeft)
-	} else if r == nil && node != tree.root && l != nil {
+		return tree.fixRemove(root, node, wasLeft)
+	} else if r == nil && node != root && l != nil {
 		wasLeft := parent.left == node
 		if parent == nil {
-			tree.root = l
+			root = l
 		} else if parent.left == node {
 			parent.left = l
 		} else {
@@ -217,7 +217,7 @@ func (tree *RB) remove(key string) string {
 		l.parent = parent
 		l.color = node.color
 
-		return tree.fixRemove(node, wasLeft)
+		return tree.fixRemove(root, node, wasLeft)
 	} else {
 		toDelete := tree.min(r)
 		if toDelete == nil {
@@ -237,16 +237,16 @@ func (tree *RB) remove(key string) string {
 	}
 }
 
-func (tree *RB) fixRemove(node *nodeRB, wasLeft bool) string {
-	if getColor(node) == Red || node == tree.root {
+func (tree *RB) fixRemove(root, node *nodeRB, wasLeft bool) string {
+	if getColor(node) == Red || node == root {
 		return "ok"
 	}
 	fmt.Printf("fixing node: %v\n", node.key)
 
-	for node != tree.root && getColor(node) == Black {
+	for node != root && getColor(node) == Black {
 		if wasLeft {
 			var sibling *nodeRB
-			if node == tree.root {
+			if node == root {
 				sibling = nil
 			} else {
 				sibling = node.parent.right
@@ -254,7 +254,7 @@ func (tree *RB) fixRemove(node *nodeRB, wasLeft bool) string {
 			if getColor(sibling) == Red {
 				sibling.color = Black
 				node.parent.color = Red
-				tree.leftRotate(node.parent)
+				tree.leftRotate(root, node.parent)
 				sibling = node.parent.right
 			}
 			if getColor(sibling.left) == Black && getColor(sibling.right) == Black {
@@ -269,18 +269,18 @@ func (tree *RB) fixRemove(node *nodeRB, wasLeft bool) string {
 				if getColor(sibling.right) == Black {
 					sibling.left.color = Black
 					sibling.color = Red
-					tree.rightRotate(sibling)
+					tree.rightRotate(root, sibling)
 					sibling = node.parent.right
 				}
 				sibling.color = node.parent.color
 				node.parent.color = Black
 				sibling.right.color = Black
-				tree.leftRotate(node.parent)
-				node = tree.root
+				tree.leftRotate(root, node.parent)
+				node = root
 			}
 		} else {
 			var sibling *nodeRB
-			if node == tree.root {
+			if node == root {
 				sibling = nil
 			} else {
 				sibling = node.parent.left
@@ -288,7 +288,7 @@ func (tree *RB) fixRemove(node *nodeRB, wasLeft bool) string {
 			if getColor(sibling) == Red {
 				sibling.color = Black
 				node.parent.color = Red
-				tree.rightRotate(node.parent)
+				tree.rightRotate(root, node.parent)
 				sibling = node.parent.left
 			}
 			if getColor(sibling.right) == Black && getColor(sibling.left) == Black {
@@ -303,20 +303,20 @@ func (tree *RB) fixRemove(node *nodeRB, wasLeft bool) string {
 				if getColor(sibling.left) == Black {
 					sibling.right.color = Black
 					sibling.color = Red
-					tree.leftRotate(sibling)
+					tree.leftRotate(root, sibling)
 					sibling = node.parent.left
 				}
 				sibling.color = node.parent.color
 				node.parent.color = Black
 				sibling.left.color = Black
-				tree.rightRotate(node.parent)
-				node = tree.root
+				tree.rightRotate(root, node.parent)
+				node = root
 			}
 		}
 	}
 
 	node.color = Black
-	tree.root.color = Black
+	root.color = Black
 	return "ok"
 }
 
@@ -351,7 +351,7 @@ func (tree *RB) max(node *nodeRB) *nodeRB {
 	return current
 }
 
-func (tree *RB) fixInsert(node *nodeRB) string {
+func (tree *RB) fixInsert(root, node *nodeRB) string {
 	if getColor(node.parent) == Black || node.parent == nil {
 		return "ok"
 	}
@@ -368,12 +368,12 @@ func (tree *RB) fixInsert(node *nodeRB) string {
 				if node == pa.right {
 					node = pa
 					gp, pa = tree.grandparent(node), node.parent
-					tree.leftRotate(node)
+					tree.leftRotate(root, node)
 				}
 
 				pa.color = Black
 				gp.color = Red
-				tree.rightRotate(gp)
+				tree.rightRotate(root, gp)
 			}
 		} else {
 			if un != nil && getColor(un) == Red {
@@ -385,22 +385,22 @@ func (tree *RB) fixInsert(node *nodeRB) string {
 				if node == pa.left {
 					node = pa
 					gp, pa = tree.grandparent(node), node.parent
-					tree.rightRotate(node)
+					tree.rightRotate(root, node)
 				}
 
 				pa.color = Black
 				gp.color = Red
-				tree.leftRotate(gp)
+				tree.leftRotate(root, gp)
 			}
 		}
 	}
 
-	tree.root.color = Black
+	root.color = Black
 
 	return "ok"
 }
 
-func (tree *RB) leftRotate(node *nodeRB) {
+func (tree *RB) leftRotate(root, node *nodeRB) {
 	parent := node.parent
 	a := node
 	b := a.right
@@ -413,7 +413,7 @@ func (tree *RB) leftRotate(node *nodeRB) {
 			parent.right = b
 		}
 	} else {
-		tree.root = b
+		root = b
 	}
 	b.parent = parent
 
@@ -426,7 +426,7 @@ func (tree *RB) leftRotate(node *nodeRB) {
 	}
 }
 
-func (tree *RB) rightRotate(node *nodeRB) {
+func (tree *RB) rightRotate(root, node *nodeRB) {
 	parent := node.parent
 	a := node
 	b := a.left
@@ -439,7 +439,7 @@ func (tree *RB) rightRotate(node *nodeRB) {
 			parent.right = b
 		}
 	} else {
-		tree.root = b
+		root = b
 	}
 	b.parent = parent
 
@@ -486,8 +486,11 @@ func (tree *RB) uncle(node *nodeRB) *nodeRB {
 }
 
 func (tree *RB) print() {
-	fmt.Println("\nRB Tree:\n")
+	fmt.Println("\nRB Tree:")
+	fmt.Println("\nOrdered by key:")
 	tree.root.printHelper()
+	fmt.Println("\nOrdered by secondary key:")
+	tree.secondaryRoot.printHelper()
 }
 
 func (node *nodeRB) printHelper() {
@@ -502,9 +505,9 @@ func (node *nodeRB) printHelper() {
 		c = "Black"
 	}
 	if node.parent != nil {
-		fmt.Printf("Node: %v/%v:%v, c=%v. (parent: %v, ", node.key, node.secondaryKey, node.value, c, node.parent.key)
+		fmt.Printf("Node: %v:%v, c=%v. (parent: %v, ", node.key, node.value, c, node.parent.key)
 	} else {
-		fmt.Printf("Node: %v/%v:%v c=%v. (parent: nil, ", node.key, node.secondaryKey, node.value, c)
+		fmt.Printf("Node: %v:%v c=%v. (parent: nil, ", node.key, node.value, c)
 	}
 	if node.left != nil {
 		fmt.Printf("Left: %v, ", node.left.key)
@@ -519,7 +522,20 @@ func (node *nodeRB) printHelper() {
 }
 
 func (tree *RB) get(key string) (string, bool) {
-	node, _ := tree.search(key)
+	node, _ := tree.search(tree.root, key)
+	if node == nil {
+		return "", false
+	}
+
+	val, ok := node.value.String()
+	if !ok {
+		return "", false
+	}
+	return val, true
+}
+
+func (tree *RB) getBySecondaryKey(secondaryKey string) (string, bool) {
+	node, _ := tree.search(tree.secondaryRoot, secondaryKey)
 	if node == nil {
 		return "", false
 	}
@@ -534,6 +550,11 @@ func (tree *RB) get(key string) (string, bool) {
 func (tree *RB) getRange(leftBound string, rightBound string) (*map[string]string, string) {
 	result := make(map[string]string)
 	return &result, tree.root.getRange(leftBound, rightBound, &result)
+}
+
+func (tree *RB) getRangeBySecondaryKey(leftBound string, rightBound string) (*map[string]string, string) {
+	result := make(map[string]string)
+	return &result, tree.secondaryRoot.getRange(leftBound, rightBound, &result)
 }
 
 func (node *nodeRB) getRange(leftBound string, rightBound string, result *map[string]string) (ret string) {

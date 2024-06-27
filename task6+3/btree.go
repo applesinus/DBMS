@@ -15,8 +15,10 @@ type Btree struct {
 type nodeBtree struct {
 	isLeaf   bool
 	keys     []string
+	altKeys  []string
 	children []*nodeBtree
 	values   []*task4.TrieWord
+	// TODO add alt key node pointer
 }
 
 func (tree Btree) Copy() tree {
@@ -30,11 +32,13 @@ func (node *nodeBtree) copy() *nodeBtree {
 	newNode := &nodeBtree{
 		isLeaf:   node.isLeaf,
 		keys:     make([]string, len(node.keys)),
+		altKeys:  make([]string, len(node.altKeys)),
 		children: make([]*nodeBtree, len(node.children)),
 		values:   make([]*task4.TrieWord, len(node.values)),
 	}
 
 	copy(newNode.keys, node.keys)
+	copy(newNode.altKeys, node.altKeys)
 	copy(newNode.values, node.values)
 
 	if node.isLeaf {
@@ -48,18 +52,11 @@ func (node *nodeBtree) copy() *nodeBtree {
 	return newNode
 }
 
-func (tree *Btree) search(key string) (*nodeBtree, int) {
-	if tree.root == nil {
+func (tree *Btree) search(root *nodeBtree, key string) (*nodeBtree, int) {
+	if root == nil {
 		return nil, -1
 	}
-	return tree.root.search(key)
-}
-
-func (tree *Btree) searchBySecondaryKey(secondaryKey string) (*nodeBtree, int) {
-	if tree.secondaryRoot == nil {
-		return nil, -1
-	}
-	return tree.secondaryRoot.search(secondaryKey)
+	return root.search(key)
 }
 
 func (node *nodeBtree) search(key string) (*nodeBtree, int) {
@@ -86,18 +83,11 @@ func (node *nodeBtree) search(key string) (*nodeBtree, int) {
 	return nil, -1
 }
 
-func (tree *Btree) searchPLR(key string) (*nodeBtree, int, *nodeBtree, *nodeBtree, int, *nodeBtree, int) {
-	if tree.root == nil {
+func (tree *Btree) searchPLR(root *nodeBtree, key string) (*nodeBtree, int, *nodeBtree, *nodeBtree, int, *nodeBtree, int) {
+	if root == nil {
 		return nil, -1, nil, nil, -1, nil, -1
 	}
-	return tree.root.searchPLR(key, nil, nil, -1, nil, -1)
-}
-
-func (tree *Btree) searchPLRbySecondary(secondaryKey string) (*nodeBtree, int, *nodeBtree, *nodeBtree, int, *nodeBtree, int) {
-	if tree.secondaryRoot == nil {
-		return nil, -1, nil, nil, -1, nil, -1
-	}
-	return tree.secondaryRoot.searchPLR(secondaryKey, nil, nil, -1, nil, -1)
+	return root.searchPLR(key, nil, nil, -1, nil, -1)
 }
 
 func (node *nodeBtree) searchPLR(key string, parent *nodeBtree, left *nodeBtree, leftIndex int, right *nodeBtree, rightIndex int) (*nodeBtree, int, *nodeBtree, *nodeBtree, int, *nodeBtree, int) {
@@ -138,7 +128,9 @@ func (tree *Btree) update(key string, value string) string {
 		return "does not exist"
 	}
 
-	node, index := tree.search(key)
+	node, index := tree.search(tree.root, key)
+	secondaryNode, secondaryIndex := tree.search(tree.secondaryRoot, node.altKeys[index])
+
 	if node == nil || index == -1 {
 		return "does not exist"
 	}
@@ -148,6 +140,7 @@ func (tree *Btree) update(key string, value string) string {
 		return "error"
 	}
 	node.values[index] = newVal
+	secondaryNode.values[secondaryIndex] = newVal
 	return "ok"
 }
 
@@ -156,18 +149,22 @@ func (tree *Btree) set(key string, secondaryKey string, value string) string {
 		tree.root = &nodeBtree{
 			isLeaf:   true,
 			keys:     make([]string, 0),
+			altKeys:  make([]string, 0),
 			children: make([]*nodeBtree, 0),
 			values:   make([]*task4.TrieWord, 0),
 		}
 		tree.root.keys = append(tree.root.keys, key)
+		tree.root.altKeys = append(tree.root.altKeys, secondaryKey)
 
 		tree.secondaryRoot = &nodeBtree{
 			isLeaf:   true,
 			keys:     make([]string, 0),
+			altKeys:  make([]string, 0),
 			children: make([]*nodeBtree, 0),
 			values:   make([]*task4.TrieWord, 0),
 		}
 		tree.secondaryRoot.keys = append(tree.secondaryRoot.keys, secondaryKey)
+		tree.secondaryRoot.altKeys = append(tree.secondaryRoot.altKeys, key)
 
 		newVal, ok := task4.Pool.Insert(value)
 		if ok != "ok" {
@@ -178,62 +175,53 @@ func (tree *Btree) set(key string, secondaryKey string, value string) string {
 		return "ok"
 	}
 
-	node, index := tree.search(key)
+	node, index := tree.search(tree.root, key)
 	if node != nil && index != -1 {
 		return "exist"
 	}
 
-	root := tree.root
+	response := tree.setter(tree.root, key, secondaryKey, value)
+	if response != "ok" {
+		return response
+	}
+
+	return tree.setter(tree.secondaryRoot, secondaryKey, key, value)
+}
+
+func (tree *Btree) setter(root *nodeBtree, key, altKey string, value string) string {
 	if len(root.keys) == 2*tree.t-1 {
 		newRoot := &nodeBtree{
 			isLeaf:   false,
 			keys:     make([]string, 0),
+			altKeys:  make([]string, 0),
 			values:   make([]*task4.TrieWord, 0),
 			children: make([]*nodeBtree, 0),
 		}
 		newRoot.children = append(newRoot.children, root)
 		tree.splitChild(newRoot, 0, root)
-		tree.insertNonFull(newRoot, key, value)
-		tree.root = newRoot
+		tree.insertNonFull(newRoot, key, altKey, value)
+		root = newRoot
 	} else {
-		tree.insertNonFull(root, key, value)
-	}
-
-	node, index = tree.searchBySecondaryKey(secondaryKey)
-	if node != nil && index != -1 {
-		return "exist"
-	}
-
-	root = tree.secondaryRoot
-	if len(root.keys) == 2*tree.t-1 {
-		newRoot := &nodeBtree{
-			isLeaf:   false,
-			keys:     make([]string, 0),
-			values:   make([]*task4.TrieWord, 0),
-			children: make([]*nodeBtree, 0),
-		}
-		newRoot.children = append(newRoot.children, root)
-		tree.splitChild(newRoot, 0, root)
-		tree.insertNonFull(newRoot, secondaryKey, value)
-		tree.secondaryRoot = newRoot
-	} else {
-		tree.insertNonFull(root, secondaryKey, value)
+		tree.insertNonFull(root, key, altKey, value)
 	}
 
 	return "ok"
 }
 
-func (tree *Btree) insertNonFull(node *nodeBtree, key string, value string) {
+func (tree *Btree) insertNonFull(node *nodeBtree, key, altKey string, value string) {
 	i := len(node.keys) - 1
 	if node.isLeaf {
 		node.keys = append(node.keys, "")
+		node.altKeys = append(node.altKeys, "")
 		node.values = append(node.values, nil)
 		for i >= 0 && key < node.keys[i] {
 			node.keys[i+1] = node.keys[i]
+			node.altKeys[i+1] = node.altKeys[i]
 			node.values[i+1] = node.values[i]
 			i--
 		}
 		node.keys[i+1] = key
+		node.altKeys[i+1] = altKey
 		newVal, ok := task4.Pool.Insert(value)
 		if ok != "ok" {
 			return
@@ -250,7 +238,7 @@ func (tree *Btree) insertNonFull(node *nodeBtree, key string, value string) {
 				i++
 			}
 		}
-		tree.insertNonFull(node.children[i], key, value)
+		tree.insertNonFull(node.children[i], key, altKey, value)
 	}
 }
 
@@ -259,15 +247,19 @@ func (tree *Btree) splitChild(parent *nodeBtree, i int, fullNode *nodeBtree) {
 	newNode := &nodeBtree{
 		isLeaf:   fullNode.isLeaf,
 		keys:     make([]string, 0),
+		altKeys:  make([]string, 0),
 		children: make([]*nodeBtree, 0),
 		values:   make([]*task4.TrieWord, 0),
 	}
 	parent.children = append(parent.children[:i+1], append([]*nodeBtree{newNode}, parent.children[i+1:]...)...)
 	parent.keys = append(parent.keys[:i], append([]string{fullNode.keys[t-1]}, parent.keys[i:]...)...)
+	parent.altKeys = append(parent.altKeys[:i], append([]string{fullNode.altKeys[t-1]}, parent.altKeys[i:]...)...)
 	parent.values = append(parent.values[:i], append([]*task4.TrieWord{fullNode.values[t-1]}, parent.values[i:]...)...)
 	newNode.keys = append(newNode.keys, fullNode.keys[t:]...)
+	newNode.altKeys = append(newNode.altKeys, fullNode.altKeys[t:]...)
 	newNode.values = append(newNode.values, fullNode.values[t:]...)
 	fullNode.keys = fullNode.keys[:t-1]
+	fullNode.altKeys = fullNode.altKeys[:t-1]
 	fullNode.values = fullNode.values[:t-1]
 	if !fullNode.isLeaf {
 		newNode.children = append(newNode.children, fullNode.children[t:]...)
@@ -276,20 +268,27 @@ func (tree *Btree) splitChild(parent *nodeBtree, i int, fullNode *nodeBtree) {
 }
 
 func (tree *Btree) remove(key string) string {
-	if tree.root == nil {
-		return "does not exist"
-	}
-	node, index, parent, left, leftIndex, right, rightIndex := tree.searchPLR(key)
-	if node == nil || index == -1 {
-		return "does not exist"
-	}
+	_, index := tree.search(tree.root, key)
+	altkey := tree.root.altKeys[index]
 
-	response := tree.removeHelper(key, node, index, parent, tree.root, left, leftIndex, right, rightIndex)
+	response := tree.remover(tree.root, key)
 	if response != "ok" {
 		return response
 	}
 
-	return tree.removeHelper(key, node, index, parent, tree.secondaryRoot, left, leftIndex, right, rightIndex)
+	return tree.remover(tree.secondaryRoot, altkey)
+}
+
+func (tree *Btree) remover(root *nodeBtree, key string) string {
+	if root == nil {
+		return "does not exist"
+	}
+	node, index, parent, left, leftIndex, right, rightIndex := tree.searchPLR(root, key)
+	if node == nil || index == -1 {
+		return "does not exist"
+	}
+
+	return tree.removeHelper(key, node, index, parent, root, left, leftIndex, right, rightIndex)
 }
 
 func (tree *Btree) removeHelper(key string, node *nodeBtree, index int, root *nodeBtree, parent *nodeBtree, left *nodeBtree, leftIndex int, right *nodeBtree, rightIndex int) string {
@@ -419,10 +418,10 @@ func (tree *Btree) removeHelper(key string, node *nodeBtree, index int, root *no
 }
 
 func (tree *Btree) print() {
-	fmt.Println("\nB Tree:\n")
-	fmt.Println("Primary keys sorted:")
+	fmt.Println("\nB Tree:")
+	fmt.Println("\nOrdered by keys:")
 	tree.root.printHelper()
-	fmt.Println("Secondary keys sorted:")
+	fmt.Println("\nOrdered by secondary keys:")
 	tree.secondaryRoot.printHelper()
 }
 
