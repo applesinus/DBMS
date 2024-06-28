@@ -3,11 +3,13 @@ package task0
 import (
 	"DBMS/interfaces"
 	"DBMS/task4"
+	"sync"
 )
 
 // Database
 type Database struct {
 	pools map[string]Pool
+	Mutex *sync.Mutex
 }
 
 // Pool
@@ -32,4 +34,10 @@ type Value struct {
 	key          string
 	secondaryKey string
 	value        task4.TrieWord
+}
+
+type Datas struct {
+	Key          string
+	SecondaryKey string
+	Value        string
 }

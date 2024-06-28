@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBMS Web API UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            max-height: 50%;
+            width: 100%;
+        }
+        .container div {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            width: 15%;
+            margin: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+            border-width: 2px;
+            border-color: #333;
+        }
+        .operations {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .operations form {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .select2 {
+            margin: 0 10px !important;
+        }
+        input {
+            min-width: 50px;
+            max-width: 500px;
+            height: 25px;
+            margin: 0 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        select {
+            min-width: 100px;
+            max-width: 500px;
+            height: 25px;
+            margin: 0 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        button {
+            height: 35px;
+            padding: 0 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .divider {
+            width: 100%;
+            border-top: 2px solid #ccc;
+            margin: 20px 0;
+        }
+    </style>
+    <link href="web/select2/select2.min.css" rel="stylesheet"/>
+    <script src="web/select2/jquery-3.4.1.js"></script>
+    <script src="web/select2/select2.full.min.js"></script>
+    <script src="web/handleSubmit.js"></script>
+</head>
+<body>
+    <h1>Your whole DB:</h1>
+    <p>(may contain old data, to get latest data, please use get operations)</p>
+    <div class="container">
+        <table style="width: 50%; text-align: center;">
+            {{range .Pools}}
+                <tr><td>
+                    <table>
+                        <caption>
+                            <b>{{.Name}}</b>
+                        </caption>
+                        <tr>
+                            {{range .Schemas}}
+                                <td>
+                                    <table>
+                                        <caption >
+                                            <b>{{.Name}}</b>
+                                        </caption>
+                                        <tr>
+                                            {{range .Collections}}
+                                                <td>
+                                                    <table>
+                                                        <caption>
+                                                            <b>{{.Name}}</b>
+                                                        </caption>
+                                                        {{range .Datas}}
+                                                            <tr>
+                                                                <td style="text-align: right; width: 50%; padding-right: 5px;">{{.Key}}</td>
+                                                                <td style="text-align: left; width: 50%; padding-left: 5px;">{{.Value}}</td>
+                                                            </tr>
+                                                        {{end}}
+                                                    </table>
+                                                </td>
+                                            {{end}}
+                                        </tr>
+                                    </table>
+                                </td>
+                            {{end}}
+                        </tr>
+                    </table>
+                </td></tr>
+            {{end}}
+        </table>
+    </div>
+    <div class="operations">
+        <form id="createPool" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>new pool</label>
+            <input name="pool" type="text" placeholder="name">
+            <button type="submit" >OK</button>
+        </form>
+        <form id="deletePool" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>delete pool</label>
+            <select id="delPool" name="pool">
+                {{range .Pools}}
+                    <option value="{{.Name}}">{{.Name}}</option>
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#delPool').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+
+
+        <form id="createSchema" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>new schema</label>
+            <input name="schema" type="text" placeholder="name">
+            <label>in</label>
+            <select id="newSchema" name="pool">
+                {{range .Pools}}
+                    <option value="{{.Name}}">{{.Name}}</option>
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#newSchema').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+        <form id="deleteSchema" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>delete schema</label>
+            <select id="delSchema" name="schema">
+                {{range $i, $p := .Pools}}
+                    {{range .Schemas}}
+                        <option value="{{$p.Name}}.{{.Name}}">{{$p.Name}}.{{.Name}}</option>
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#delSchema').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+
+
+        <form id="createCollection" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>new collection</label>
+            <input name="collection" type="text" placeholder="name">
+            <label>of type</label>
+            <select id="newCollType" name="collectionType">
+                {{range .CollectionTypes}}
+                    <option value="{{.}}">{{.}}</option>
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#newCollType').select2();
+                });
+            </script>
+            <label>in</label>
+            <select id="newColl" name="schema">
+                {{range $i, $p := .Pools}}
+                    {{range .Schemas}}
+                        <option value="{{$p.Name}}.{{.Name}}">{{$p.Name}}.{{.Name}}</option>
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#newColl').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+        <form id="deleteCollection" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>delete collection</label>
+            <select id="delColl" name="collection">
+                {{range $i, $p := .Pools}}
+                    {{range $j, $s := .Schemas}}
+                        {{range .Collections}}
+                            <option value="{{$p.Name}}.{{$s.Name}}.{{.Name}}">{{$p.Name}}.{{$s.Name}}.{{.Name}}</option>
+                        {{end}}
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#delColl').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+
+
+        <form id="set" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>set</label>
+            <input id="key" type="text" placeholder="key">
+            <input id="secondaryKey" type="text" placeholder="secondary key">
+            <input id="value" type="text" placeholder="value">
+            <label>in</label>
+            <select id="setCollection" name="collection">
+                {{range $i, $p := .Pools}}
+                    {{range $j, $s := .Schemas}}
+                        {{range .Collections}}
+                            <option value="{{$p.Name}}.{{$s.Name}}.{{.Name}}">{{$p.Name}}.{{$s.Name}}.{{.Name}}</option>
+                        {{end}}
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#setCollection').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+        <form id="update" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>update</label>
+            <select id="updater">
+                {{range $i, $p := .Pools}}
+                    {{range $j, $s := .Schemas}}
+                        {{range $k, $c := .Collections}}
+                            {{range .Datas}}
+                                <option value="{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.Key}}">{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.Key}}</option>
+                            {{end}}
+                        {{end}}
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#updater').select2();
+                });
+            </script>
+            <input type="text" placeholder="value">
+            <button type="submit" >OK</button>
+        </form>
+        <form id="delete" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>delete</label>
+            <select id="deleter">
+                {{range $i, $p := .Pools}}
+                    {{range $j, $s := .Schemas}}
+                        {{range $k, $c := .Collections}}
+                            {{range .Datas}}
+                                <option value="{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.Key}}">{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.Key}}</option>
+                            {{end}}
+                        {{end}}
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#deleter').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+
+        <div class="divider"></div>
+
+        <form id="get" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>show value of</label>
+            <select id="getKey" name="key">
+                {{range $i, $p := .Pools}}
+                    {{range $j, $s := .Schemas}}
+                        {{range $k, $c := .Collections}}
+                            {{range .Datas}}
+                                <option value="{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.Key}}">{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.Key}}</option>
+                            {{end}}
+                        {{end}}
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#getKey').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+        <form id="getSecondary" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>show value by secondary key</label>
+            <select id="getSecKey" name="key">
+                {{range $i, $p := .Pools}}
+                    {{range $j, $s := .Schemas}}
+                        {{range $k, $c := .Collections}}
+                            {{range .Datas}}
+                                <option value="{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.Key}}">{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.SecondaryKey}}</option>
+                            {{end}}
+                        {{end}}
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#getSecKey').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+        <form id="getAt" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>show value of</label>
+            <select id="getAtKey" name="key">
+                {{range $i, $p := .Pools}}
+                    {{range $j, $s := .Schemas}}
+                        {{range $k, $c := .Collections}}
+                            {{range .Datas}}
+                                <option value="{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.Key}}">{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.Key}}</option>
+                            {{end}}
+                        {{end}}
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#getAtKey').select2();
+                });
+            </script>
+            <label>at</label>
+            <input name="time" type="datetime-local">
+            <button type="submit" >OK</button>
+        </form>
+
+        <form id="getRange" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>show values in range</label>
+            <input name="key" type="text" placeholder="left">
+            <label>-</label>
+            <input name="secondaryKey" type="text" placeholder="right">
+            <label>in</label>
+            <select id="getRangeCollection">
+                {{range $i, $p := .Pools}}
+                    {{range $j, $s := .Schemas}}
+                        {{range .Collections}}
+                            <option value="{{$p.Name}}.{{$s.Name}}.{{.Name}}">{{$p.Name}}.{{$s.Name}}.{{.Name}}</option>
+                        {{end}}
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#getRangeCollection').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+        <form id="getRangeSecondary" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+            <label>show values by secondary keys in range</label>
+            <input type="text" placeholder="left">
+            <label>-</label>
+            <input type="text" placeholder="right">
+            <label>in</label>
+            <select id="getRangeSecondaryCollection">
+                {{range $i, $p := .Pools}}
+                    {{range $j, $s := .Schemas}}
+                        {{range .Collections}}
+                            <option value="{{$p.Name}}.{{$s.Name}}.{{.Name}}">{{$p.Name}}.{{$s.Name}}.{{.Name}}</option>
+                        {{end}}
+                    {{end}}
+                {{end}}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#getRangeSecondaryCollection').select2();
+                });
+            </script>
+            <button type="submit" >OK</button>
+        </form>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+        &copy; 2023 Dmitry Rosin. MIT License.
+    </div>
+</body>
+<script>
+    $(document).ready(function() {
+            $('.select2.select2-container').each(function() {
+                var currentWidth = $(this).width();
+                var newWidth = currentWidth * 1.15;
+                $(this).css('width', newWidth + 'px');
+            });
+        });
+</script>
+</html>

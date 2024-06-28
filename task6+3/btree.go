@@ -436,6 +436,37 @@ func (node *nodeBtree) printHelper() {
 	}
 }
 
+func (tree *Btree) getAll() (*[]string, *[]string, *[]string, string) {
+	keys := make([]string, 0)
+	secondaryKeys := make([]string, 0)
+	values := make([]string, 0)
+
+	return &keys, &secondaryKeys, &values, tree.root.getAll(&keys, &secondaryKeys, &values)
+}
+
+func (node *nodeBtree) getAll(keys, secondaryKeys, values *[]string) string {
+	if node == nil {
+		return "ok"
+	}
+
+	for i := 0; i < len(node.keys); i++ {
+		*keys = append(*keys, node.keys[i])
+		*secondaryKeys = append(*secondaryKeys, node.altKeys[i])
+		val, ok := node.values[i].String()
+		if !ok {
+			return "error"
+		}
+		*values = append(*secondaryKeys, val)
+	}
+	for i := 0; i < len(node.children); i++ {
+		res := node.children[i].getAll(keys, secondaryKeys, values)
+		if res != "ok" {
+			return res
+		}
+	}
+	return "ok"
+}
+
 func (tree *Btree) getter(key string, root *nodeBtree) (string, bool) {
 	node, index := root.search(key)
 	if node == nil || index == -1 {

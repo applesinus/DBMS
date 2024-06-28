@@ -4,10 +4,14 @@ import (
 	"DBMS/interfaces"
 	"DBMS/task6+3"
 	"fmt"
+	"sync"
 )
 
 func CreateDB() *Database {
-	return &Database{pools: make(map[string]Pool)}
+	return &Database{
+		pools: make(map[string]Pool),
+		Mutex: &sync.Mutex{},
+	}
 }
 
 func (db *Database) CreatePool(settings map[string]string, name string) string {
@@ -38,6 +42,14 @@ func (db *Database) DeletePool(settings map[string]string, name string) string {
 
 	delete(db.pools, name)
 	return "ok"
+}
+
+func (db *Database) ListPools(settings map[string]string) *[]string {
+	pools := make([]string, 0)
+	for _, pool := range db.pools {
+		pools = append(pools, pool.name)
+	}
+	return &pools
 }
 
 func (db *Database) CreateSchema(settings map[string]string, name string, pool string) string {
@@ -75,6 +87,22 @@ func (db *Database) DeleteSchema(settings map[string]string, name string, pool s
 
 	delete(db.pools[pool].schema, name)
 	return "ok"
+}
+
+func (db *Database) ListSchemas(settings map[string]string, pool string) *[]string {
+	schemas := make([]string, 0)
+	for _, schema := range db.pools[pool].schema {
+		schemas = append(schemas, schema.name)
+	}
+	return &schemas
+}
+
+func (db *Database) ListCollections(settings map[string]string, pool string, schema string) *[]string {
+	collections := make([]string, 0)
+	for collection := range db.pools[pool].schema[schema].collection {
+		collections = append(collections, collection)
+	}
+	return &collections
 }
 
 func (db *Database) CreateCollection(settings map[string]string, name string, collType string, pool string, schema string) string {
@@ -179,6 +207,21 @@ func (db *Database) GetRangeBySecondaryKey(settings map[string]string, leftBound
 		return &ret
 	}
 	return res
+}
+
+func (db *Database) GetAll(settings map[string]string, pool string, schema string, coll string) *[]Datas {
+	if !db.checkCollection(pool, schema, coll) {
+		return nil
+	}
+	keys, secs, vals, ok := db.pools[pool].schema[schema].collection[coll].GetAll()
+	if ok != "ok" {
+		return nil
+	}
+	res := make([]Datas, len(*keys))
+	for i := 0; i < len(*keys); i++ {
+		res[i] = Datas{(*keys)[i], (*secs)[i], (*vals)[i]}
+	}
+	return &res
 }
 
 func (db *Database) Set(settings map[string]string, key string, secondaryKey string, value string, pool string, schema string, coll string) string {

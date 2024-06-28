@@ -8,6 +8,7 @@ type CollectionInterface interface {
 	GetBySecondaryKey(key string) (string, string)
 	GetRange(leftBound string, rightBound string) (*map[string]string, string)
 	GetRangeBySecondaryKey(leftBound string, rightBound string) (*map[string]string, string)
+	GetAll() (*[]string, *[]string, *[]string, string)
 	Delete(key string) string
 	Copy() CollectionInterface
 }

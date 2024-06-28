@@ -14,6 +14,7 @@ type tree interface {
 	getBySecondaryKey(secondaryKey string) (string, bool)
 	getRange(leftBound string, rightBound string) (*map[string]string, string)
 	getRangeBySecondaryKey(leftBound string, rightBound string) (*map[string]string, string)
+	getAll() (*[]string, *[]string, *[]string, string)
 	remove(key string) string
 	Copy() tree
 }
@@ -84,6 +85,10 @@ func (t Tree) Get(key string) (string, string) {
 	}
 
 	return fmt.Sprintf("%s", value), "ok"
+}
+
+func (t Tree) GetAll() (*[]string, *[]string, *[]string, string) {
+	return t.self.getAll()
 }
 
 func (t Tree) GetBySecondaryKey(secondaryKey string) (string, string) {

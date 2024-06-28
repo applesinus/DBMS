@@ -1,0 +1,7 @@
+createPool pool
+createSchema schema in pool
+createCollection BI collection in pool.schema
+
+set thisYear ty 2024 in pool.schema.collection
+set lastYear ly 2023 in pool.schema.collection
+set justYear jy 2010 in pool.schema.collection

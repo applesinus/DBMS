@@ -472,6 +472,32 @@ func (node *nodeAVL) printHelper() {
 	node.right.printHelper()
 }
 
+func (tree *AVL) getAll() (*[]string, *[]string, *[]string, string) {
+	keys := make([]string, 0)
+	secondaryKeys := make([]string, 0)
+	values := make([]string, 0)
+	return &keys, &secondaryKeys, &values, tree.root.getAll(&keys, &secondaryKeys, &values)
+}
+
+func (node *nodeAVL) getAll(keys, secondaryKeys, values *[]string) string {
+	if node == nil {
+		return "ok"
+	}
+
+	*keys = append(*keys, node.key)
+	*secondaryKeys = append(*secondaryKeys, node.altKey.key)
+	val, ok := node.value.String()
+	if !ok {
+		return "error"
+	}
+	*values = append(*values, val)
+	res := node.left.getAll(keys, secondaryKeys, values)
+	if res != "ok" {
+		return res
+	}
+	return node.right.getAll(keys, secondaryKeys, values)
+}
+
 func (tree *AVL) get(key string) (string, bool) {
 	node, _ := tree.search(tree.root, key)
 	if node == nil {

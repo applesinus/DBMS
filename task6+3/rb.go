@@ -521,6 +521,32 @@ func (node *nodeRB) printHelper() {
 	node.right.printHelper()
 }
 
+func (tree *RB) getAll() (*[]string, *[]string, *[]string, string) {
+	keys := make([]string, 0)
+	values := make([]string, 0)
+	secondaryKeys := make([]string, 0)
+	return &keys, &values, &secondaryKeys, tree.root.getAll(&keys, &values, &secondaryKeys)
+}
+
+func (node *nodeRB) getAll(keys, secondaryKeys, values *[]string) string {
+	if node == nil {
+		return "ok"
+	}
+
+	*keys = append(*keys, node.key)
+	*secondaryKeys = append(*secondaryKeys, node.altKey.key)
+	val, ok := node.value.String()
+	if !ok {
+		return "error"
+	}
+	*values = append(*values, val)
+
+	if node.left.getAll(keys, secondaryKeys, values) != "ok" {
+		return "error"
+	}
+	return node.right.getAll(keys, secondaryKeys, values)
+}
+
 func (tree *RB) get(key string) (string, bool) {
 	node, _ := tree.search(tree.root, key)
 	if node == nil {

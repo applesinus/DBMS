@@ -119,6 +119,23 @@ func (collection *CollectionBI) GetRangeBySecondaryKey(leftBound string, rightBo
 	return &result, "ok"
 }
 
+func (collection *CollectionBI) GetAll() (*[]string, *[]string, *[]string, string) {
+	keys := make([]string, 0)
+	secondaryKeys := make([]string, 0)
+	values := make([]string, 0)
+	for _, value := range collection.value {
+		keys = append(keys, value.key)
+		secondaryKeys = append(secondaryKeys, value.secondaryKey)
+		res, ok := value.value.String()
+		if !ok {
+			return nil, nil, nil, "error"
+		}
+		values = append(values, res)
+	}
+
+	return &keys, &secondaryKeys, &values, "ok"
+}
+
 func (collection *CollectionBI) Delete(key string) string {
 	index := -1
 	for i, k := range collection.value {

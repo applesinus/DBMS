@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Key-Value Map</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            max-height: 50%;
+            width: 100%;
+        }
+        .container div {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            width: 15%;
+            margin: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+            border-width: 2px;
+            border-color: #333;
+        }
+        .operations {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .operations form {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .select2 {
+            margin: 0 10px !important;
+        }
+        input {
+            min-width: 50px;
+            max-width: 200px;
+            height: 25px;
+            margin: 0 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        select {
+            min-width: 100px;
+            max-width: 200px;
+            height: 25px;
+            margin: 0 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        button {
+            height: 35px;
+            padding: 0 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .divider {
+            width: 100%;
+            border-top: 2px solid #ccc;
+            margin: 20px 0;
+        }
+    </style>
+    <link href="web/select2/select2.min.css" rel="stylesheet"/>
+    <script src="web/select2/jquery-3.7.2.min.js"></script>
+    <script src="web/select2/select2.full.min.js"></script>
+    <script src="web/submitHandler.js"></script>
+</head>
+<body>
+    <div class="operations">
+        <form >
+            <label>set</label>
+            <select id="setter">
+                <!-- TODO -->
+            </select>
+            <script>
+                $(document).ready(function() {
+                    $('#setter').select2();
+                });
+            </script> 
+            <input type="text" placeholder="value">
+            <button type="submit">OK</button>
+        </form>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+        &copy; 2023 Dmitry Rosin. MIT License.
+    </div>
+</body>
+</html>
