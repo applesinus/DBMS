@@ -2,6 +2,7 @@ package task7
 
 import (
 	"DBMS/database"
+	"DBMS/task0+3"
 	"context"
 	"fmt"
 	"net/http"
@@ -27,14 +28,10 @@ type schema struct {
 
 type collection struct {
 	Name  string
-	Datas []valuesData
+	Datas []ValuesData
 }
 
-type valuesData struct {
-	Key          string
-	SecondaryKey string
-	Value        string
-}
+type ValuesData task0.Datas
 
 func initHandlers() {
 	http.HandleFunc("/", mainPage)
@@ -86,7 +83,7 @@ func testDB() data {
 						Collections: []collection{
 							{
 								Name: "collection1",
-								Datas: []valuesData{
+								Datas: []ValuesData{
 									{
 										Key:   "key1",
 										Value: "value1",
@@ -99,7 +96,7 @@ func testDB() data {
 							},
 							{
 								Name: "collection2",
-								Datas: []valuesData{
+								Datas: []ValuesData{
 									{
 										Key:   "key1",
 										Value: "value1",
@@ -117,7 +114,7 @@ func testDB() data {
 						Collections: []collection{
 							{
 								Name: "collection1",
-								Datas: []valuesData{
+								Datas: []ValuesData{
 									{
 										Key:   "key1",
 										Value: "value1",
@@ -130,7 +127,7 @@ func testDB() data {
 							},
 							{
 								Name: "collection2",
-								Datas: []valuesData{
+								Datas: []ValuesData{
 									{
 										Key:   "key1",
 										Value: "value1",
@@ -153,7 +150,7 @@ func testDB() data {
 						Collections: []collection{
 							{
 								Name: "collection1",
-								Datas: []valuesData{
+								Datas: []ValuesData{
 									{
 										Key:   "key1",
 										Value: "value1",
@@ -166,7 +163,7 @@ func testDB() data {
 							},
 							{
 								Name: "collection2",
-								Datas: []valuesData{
+								Datas: []ValuesData{
 									{
 										Key:   "key1",
 										Value: "value1",
@@ -184,7 +181,7 @@ func testDB() data {
 						Collections: []collection{
 							{
 								Name: "collection1",
-								Datas: []valuesData{
+								Datas: []ValuesData{
 									{
 										Key:   "key1",
 										Value: "value1",
@@ -197,7 +194,7 @@ func testDB() data {
 							},
 							{
 								Name: "collection2",
-								Datas: []valuesData{
+								Datas: []ValuesData{
 									{
 										Key:   "key1",
 										Value: "value1",
@@ -235,7 +232,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 				newCollection := collection{Name: c}
 				datas := database.ListDatas(p, s, c)
 				for _, d := range datas {
-					newData := valuesData{Key: d.Key, SecondaryKey: d.SecondaryKey, Value: d.Value}
+					newData := ValuesData{Key: d.Key, SecondaryKey: d.SecondaryKey, Value: d.Value}
 					newCollection.Datas = append(newCollection.Datas, newData)
 				}
 				newSchema.Collections = append(newSchema.Collections, newCollection)

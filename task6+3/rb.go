@@ -84,11 +84,11 @@ func (tree *RB) search(node *nodeRB, key string) (*nodeRB, *nodeRB) {
 
 func (tree *RB) update(key string, value string) string {
 	node, _ := tree.search(tree.root, key)
-	secondaryNode := node.altKey
 
 	if node == nil {
 		return "does not exist"
 	}
+	secondaryNode := node.altKey
 
 	newVal, ok := task4.Pool.Insert(value)
 	if ok != "ok" {
@@ -135,8 +135,6 @@ func (tree *RB) set(key string, secondaryKey string, value string) string {
 	if parent == nil {
 		tree.root = node
 		node.color = Black
-	}
-	if secondaryParent == nil {
 		tree.secondaryRoot = secondaryNode
 		node.color = Black
 		return "ok"
@@ -183,6 +181,11 @@ func (tree *RB) remover(root, node, parent *nodeRB) string {
 	l, r := node.left, node.right
 	if l == nil && r == nil {
 		if parent == nil {
+			if root == tree.root {
+				tree.root = nil
+			} else {
+				tree.secondaryRoot = nil
+			}
 			root = nil
 			return "ok"
 		} else if parent.left == node {
@@ -195,6 +198,11 @@ func (tree *RB) remover(root, node, parent *nodeRB) string {
 	} else if l == nil && node != root && r != nil {
 		wasLeft := parent.left == node
 		if parent == nil {
+			if root == tree.root {
+				tree.root = r
+			} else {
+				tree.secondaryRoot = r
+			}
 			root = r
 		} else if parent.left == node {
 			parent.left = r
@@ -208,6 +216,11 @@ func (tree *RB) remover(root, node, parent *nodeRB) string {
 	} else if r == nil && node != root && l != nil {
 		wasLeft := parent.left == node
 		if parent == nil {
+			if root == tree.root {
+				tree.root = l
+			} else {
+				tree.secondaryRoot = l
+			}
 			root = l
 		} else if parent.left == node {
 			parent.left = l
@@ -316,7 +329,11 @@ func (tree *RB) fixRemove(root, node *nodeRB, wasLeft bool) string {
 	}
 
 	node.color = Black
-	root.color = Black
+	if root == tree.root {
+		tree.root.color = Black
+	} else {
+		tree.secondaryRoot.color = Black
+	}
 	return "ok"
 }
 
@@ -358,6 +375,9 @@ func (tree *RB) fixInsert(root, node *nodeRB) string {
 
 	for node.parent != nil && getColor(node.parent) == Red {
 		un, gp, pa := tree.uncle(node), tree.grandparent(node), node.parent
+		if gp == nil {
+			break
+		}
 		if gp.left == pa {
 			if un != nil && getColor(un) == Red {
 				pa.color = Black
@@ -389,14 +409,19 @@ func (tree *RB) fixInsert(root, node *nodeRB) string {
 				}
 
 				pa.color = Black
-				gp.color = Red
-				tree.leftRotate(root, gp)
+				if gp != nil {
+					gp.color = Red
+					tree.leftRotate(root, gp)
+				}
 			}
 		}
 	}
 
-	root.color = Black
-
+	if root == tree.root {
+		tree.root.color = Black
+	} else {
+		tree.secondaryRoot.color = Black
+	}
 	return "ok"
 }
 
@@ -413,6 +438,11 @@ func (tree *RB) leftRotate(root, node *nodeRB) {
 			parent.right = b
 		}
 	} else {
+		if root == tree.root {
+			tree.root = b
+		} else {
+			tree.secondaryRoot = b
+		}
 		root = b
 	}
 	b.parent = parent
@@ -439,6 +469,11 @@ func (tree *RB) rightRotate(root, node *nodeRB) {
 			parent.right = b
 		}
 	} else {
+		if root == tree.root {
+			tree.root = b
+		} else {
+			tree.secondaryRoot = b
+		}
 		root = b
 	}
 	b.parent = parent

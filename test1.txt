@@ -1,7 +1,93 @@
 createPool pool
 createSchema schema in pool
-createCollection BI collection in pool.schema
+createCollection BI bi in pool.schema
 
-set thisYear ty 2024 in pool.schema.collection
-set lastYear ly 2023 in pool.schema.collection
-set justYear jy 2010 in pool.schema.collection
+set One 1 2001 in pool.schema.bi
+set Two 2 2002 in pool.schema.bi
+set Three 3 2003 in pool.schema.bi
+set Four 4 2004 in pool.schema.bi
+set Five 5 2005 in pool.schema.bi
+set Six 6 2006 in pool.schema.bi
+set Seven 7 2007 in pool.schema.bi
+set Eight 8 2008 in pool.schema.bi
+set Nine 9 2009 in pool.schema.bi
+set Ten 10 2010 in pool.schema.bi
+set Eleven 11 2011 in pool.schema.bi
+set Twelve 12 2012 in pool.schema.bi
+set Thirteen 13 2013 in pool.schema.bi
+set Fourteen 14 2014 in pool.schema.bi
+set Fifteen 15 2015 in pool.schema.bi
+set Sixteen 16 2016 in pool.schema.bi
+set Seventeen 17 2017 in pool.schema.bi
+set Eighteen 18 2018 in pool.schema.bi
+set Nineteen 19 2019 in pool.schema.bi
+set Twenty 20 2020 in pool.schema.bi
+
+createCollection AVL avl in pool.schema
+
+set One 1 2001 in pool.schema.avl
+set Two 2 2002 in pool.schema.avl
+set Three 3 2003 in pool.schema.avl
+set Four 4 2004 in pool.schema.avl
+set Five 5 2005 in pool.schema.avl
+set Six 6 2006 in pool.schema.avl
+set Seven 7 2007 in pool.schema.avl
+set Eight 8 2008 in pool.schema.avl
+set Nine 9 2009 in pool.schema.avl
+set Ten 10 2010 in pool.schema.avl
+set Eleven 11 2011 in pool.schema.avl
+set Twelve 12 2012 in pool.schema.avl
+set Thirteen 13 2013 in pool.schema.avl
+set Fourteen 14 2014 in pool.schema.avl
+set Fifteen 15 2015 in pool.schema.avl
+set Sixteen 16 2016 in pool.schema.avl
+set Seventeen 17 2017 in pool.schema.avl
+set Eighteen 18 2018 in pool.schema.avl
+set Nineteen 19 2019 in pool.schema.avl
+set Twenty 20 2020 in pool.schema.avl
+
+createCollection RB rb in pool.schema
+
+set One 1 2001 in pool.schema.rb
+set Two 2 2002 in pool.schema.rb
+set Three 3 2003 in pool.schema.rb
+set Four 4 2004 in pool.schema.rb
+set Five 5 2005 in pool.schema.rb
+set Six 6 2006 in pool.schema.rb
+set Seven 7 2007 in pool.schema.rb
+set Eight 8 2008 in pool.schema.rb
+set Nine 9 2009 in pool.schema.rb
+set Ten 10 2010 in pool.schema.rb
+set Eleven 11 2011 in pool.schema.rb
+set Twelve 12 2012 in pool.schema.rb
+set Thirteen 13 2013 in pool.schema.rb
+set Fourteen 14 2014 in pool.schema.rb
+set Fifteen 15 2015 in pool.schema.rb
+set Sixteen 16 2016 in pool.schema.rb
+set Seventeen 17 2017 in pool.schema.rb
+set Eighteen 18 2018 in pool.schema.rb
+set Nineteen 19 2019 in pool.schema.rb
+set Twenty 20 2020 in pool.schema.rb
+
+createCollection Btree bt in pool.schema
+
+set One 1 2001 in pool.schema.bt
+set Two 2 2002 in pool.schema.bt
+set Three 3 2003 in pool.schema.bt
+set Four 4 2004 in pool.schema.bt
+set Five 5 2005 in pool.schema.bt
+set Six 6 2006 in pool.schema.bt
+set Seven 7 2007 in pool.schema.bt
+set Eight 8 2008 in pool.schema.bt
+set Nine 9 2009 in pool.schema.bt
+set Ten 10 2010 in pool.schema.bt
+set Eleven 11 2011 in pool.schema.bt
+set Twelve 12 2012 in pool.schema.bt
+set Thirteen 13 2013 in pool.schema.bt
+set Fourteen 14 2014 in pool.schema.bt
+set Fifteen 15 2015 in pool.schema.bt
+set Sixteen 16 2016 in pool.schema.bt
+set Seventeen 17 2017 in pool.schema.bt
+set Eighteen 18 2018 in pool.schema.bt
+set Nineteen 19 2019 in pool.schema.bt
+set Twenty 20 2020 in pool.schema.bt

@@ -78,6 +78,11 @@ func (tree *AVL) rebalance(root, node *nodeAVL) string {
 					parent.right = b
 				}
 			} else {
+				if root == tree.root {
+					tree.root = b
+				} else {
+					tree.secondaryRoot = b
+				}
 				root = b
 			}
 			b.parent = parent
@@ -109,6 +114,11 @@ func (tree *AVL) rebalance(root, node *nodeAVL) string {
 					parent.right = c
 				}
 			} else {
+				if root == tree.root {
+					tree.root = c
+				} else {
+					tree.secondaryRoot = c
+				}
 				root = c
 			}
 			c.parent = parent
@@ -151,6 +161,11 @@ func (tree *AVL) rebalance(root, node *nodeAVL) string {
 					parent.right = b
 				}
 			} else {
+				if root == tree.root {
+					tree.root = b
+				} else {
+					tree.secondaryRoot = b
+				}
 				root = b
 			}
 			b.parent = parent
@@ -182,6 +197,11 @@ func (tree *AVL) rebalance(root, node *nodeAVL) string {
 					parent.right = c
 				}
 			} else {
+				if root == tree.root {
+					tree.root = c
+				} else {
+					tree.secondaryRoot = c
+				}
 				root = c
 			}
 			c.parent = parent
@@ -263,8 +283,7 @@ func (tree *AVL) changeHeights(root, node *nodeAVL) string {
 
 func (tree *AVL) set(key string, secondaryKey string, value string) string {
 	node, parent := tree.search(tree.root, key)
-	secondaryNode := node.altKey
-	secondaryParent := secondaryNode.parent
+	secondaryNode, secondaryParent := tree.search(tree.secondaryRoot, secondaryKey)
 
 	if node != nil || secondaryNode != nil {
 		return "exist"
@@ -298,8 +317,6 @@ func (tree *AVL) set(key string, secondaryKey string, value string) string {
 
 	if parent == nil {
 		tree.root = node
-	}
-	if secondaryParent == nil {
 		tree.secondaryRoot = secondaryNode
 		return "ok"
 	}
@@ -310,7 +327,13 @@ func (tree *AVL) set(key string, secondaryKey string, value string) string {
 		parent.right = node
 	}
 
-	response := tree.changeHeights(tree.secondaryRoot, secondaryParent)
+	if secondaryKey < secondaryParent.key {
+		secondaryParent.left = secondaryNode
+	} else {
+		secondaryParent.right = secondaryNode
+	}
+
+	response := tree.changeHeights(tree.secondaryRoot, secondaryNode.parent)
 	if response != "ok" {
 		return response
 	}
@@ -320,9 +343,10 @@ func (tree *AVL) set(key string, secondaryKey string, value string) string {
 
 func (tree *AVL) update(key string, value string) string {
 	node, _ := tree.search(tree.root, key)
-	secondaryNode := node.altKey
-
-	if node == nil {
+	var secondaryNode *nodeAVL = nil
+	if node != nil {
+		secondaryNode = node.altKey
+	} else {
 		return "does not exist"
 	}
 
@@ -339,7 +363,11 @@ func (tree *AVL) update(key string, value string) string {
 
 func (tree *AVL) remove(key string) string {
 	node, _ := tree.search(tree.root, key)
-	secondaryNode := node.altKey
+	var secondaryNode *nodeAVL = nil
+	if node != nil {
+		secondaryNode = node.altKey
+	}
+
 	if node == nil || secondaryNode == nil {
 		return "does not exist"
 	}
@@ -357,7 +385,11 @@ func (tree *AVL) remover(root *nodeAVL, node *nodeAVL) string {
 	if node.left == nil && node.right == nil {
 		// Node with no children
 		if parent == nil {
-			root = nil
+			if root == tree.root {
+				tree.root = nil
+			} else {
+				tree.secondaryRoot = nil
+			}
 			return "ok"
 		} else {
 			if parent.left == node {
@@ -371,7 +403,11 @@ func (tree *AVL) remover(root *nodeAVL, node *nodeAVL) string {
 	} else if node.left == nil {
 		// Node with only right child
 		if parent == nil {
-			root = node.right
+			if root == tree.root {
+				tree.root = node.right
+			} else {
+				tree.secondaryRoot = node.right
+			}
 			node.right.parent = nil
 			return "ok"
 		} else {
@@ -388,7 +424,11 @@ func (tree *AVL) remover(root *nodeAVL, node *nodeAVL) string {
 	} else if node.right == nil {
 		// Node with only left child
 		if parent == nil {
-			root = node.left
+			if root == tree.root {
+				tree.root = node.left
+			} else {
+				tree.secondaryRoot = node.left
+			}
 			node.left.parent = nil
 			return "ok"
 		} else {

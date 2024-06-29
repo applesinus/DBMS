@@ -200,7 +200,11 @@ func (tree *Btree) setter(root *nodeBtree, key, altKey string, value string) str
 		newRoot.children = append(newRoot.children, root)
 		tree.splitChild(newRoot, 0, root)
 		tree.insertNonFull(newRoot, key, altKey, value)
-		root = newRoot
+		if root == tree.root {
+			tree.root = newRoot
+		} else {
+			tree.secondaryRoot = newRoot
+		}
 	} else {
 		tree.insertNonFull(root, key, altKey, value)
 	}
@@ -343,6 +347,11 @@ func (tree *Btree) removeHelper(key string, node *nodeBtree, index int, root *no
 				// check if parent has no more keys
 				if len(parent.keys) == 1 {
 					if parent == root {
+						if root == tree.root {
+							tree.root = node
+						} else {
+							tree.secondaryRoot = node
+						}
 						root = node
 					}
 					*parent = *node
@@ -365,6 +374,11 @@ func (tree *Btree) removeHelper(key string, node *nodeBtree, index int, root *no
 				// check if parent has no more keys
 				if len(parent.keys) == 1 {
 					if parent == root {
+						if root == tree.root {
+							tree.root = node
+						} else {
+							tree.secondaryRoot = node
+						}
 						root = node
 					}
 					*parent = *node
@@ -456,7 +470,7 @@ func (node *nodeBtree) getAll(keys, secondaryKeys, values *[]string) string {
 		if !ok {
 			return "error"
 		}
-		*values = append(*secondaryKeys, val)
+		*values = append(*values, val)
 	}
 	for i := 0; i < len(node.children); i++ {
 		res := node.children[i].getAll(keys, secondaryKeys, values)

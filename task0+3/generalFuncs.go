@@ -219,7 +219,7 @@ func (db *Database) GetAll(settings map[string]string, pool string, schema strin
 	}
 	res := make([]Datas, len(*keys))
 	for i := 0; i < len(*keys); i++ {
-		res[i] = Datas{(*keys)[i], (*secs)[i], (*vals)[i]}
+		res[i] = Datas{Key: (*keys)[i], SecondaryKey: (*secs)[i], Value: (*vals)[i]}
 	}
 	return &res
 }
