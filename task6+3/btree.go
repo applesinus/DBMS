@@ -523,7 +523,13 @@ func (node *nodeBtree) getRange(leftBound string, rightBound string, result *map
 	ret = "start"
 
 	if !node.isLeaf {
-		for i := 0; i < len(node.keys); i++ {
+		if node.keys[0] > leftBound {
+			ret = node.children[0].getRange(leftBound, rightBound, result)
+			if ret != "ok" {
+				return
+			}
+		}
+		for i := 1; i < len(node.keys); i++ {
 			if node.keys[i] >= leftBound && node.keys[i] <= rightBound {
 				ret = node.children[i].getRange(leftBound, rightBound, result)
 				if ret != "ok" {
@@ -531,7 +537,7 @@ func (node *nodeBtree) getRange(leftBound string, rightBound string, result *map
 				}
 			}
 		}
-		if node.keys[len(node.keys)-1] >= leftBound && node.keys[len(node.keys)-1] <= rightBound {
+		if node.keys[len(node.keys)-1] < rightBound {
 			ret = node.children[len(node.children)-1].getRange(leftBound, rightBound, result)
 			if ret != "ok" {
 				return

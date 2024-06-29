@@ -261,7 +261,10 @@ func ExecuteCommand(command string) string {
 
 		if strings.ToLower(words[0]) == "getrange" {
 			result := db.GetRange(settings, leftBound, rightBound, poolName, schemaName, collectionName)
-			if result != nil && len(*result) != 0 {
+			if result != nil {
+				if len(*result) == 0 {
+					return "no data in range " + leftBound + " - " + rightBound
+				}
 				str := new(strings.Builder)
 				for k, v := range *result {
 					str.WriteString(k + " = " + v + "\n")
@@ -271,7 +274,10 @@ func ExecuteCommand(command string) string {
 			return "error"
 		} else if strings.ToLower(words[0]) == "getrangesecondary" {
 			result := db.GetRangeBySecondaryKey(settings, leftBound, rightBound, poolName, schemaName, collectionName)
-			if result != nil && len(*result) != 0 {
+			if result != nil {
+				if len(*result) == 0 {
+					return "no data in range " + leftBound + " - " + rightBound
+				}
 				str := new(strings.Builder)
 				for k, v := range *result {
 					str.WriteString(k + " = " + v + "\n")
