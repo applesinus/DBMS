@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{template "title" .}}</title>
+    {{template "styles" .}}
+    {{template "imports" .}}
+</head>
+<body>
+    {{template "body" .}}
+
+    <div class="footer-divider" style="width: 100%; margin: 20px 0; border-top: 2px solid #ccc"></div>
+    <div style="text-align: center">
+        &copy; 2023 Dmitry Rosin. MIT License.
+    </div>
+</body>
+{{template "afterbody" .}}
+</html>

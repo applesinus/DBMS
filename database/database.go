@@ -191,7 +191,7 @@ func ExecuteCommand(command string) string {
 		return response
 
 	// Get and Delete value
-	case "get", "delete":
+	case "get", "getsecondary", "delete":
 		if len(words) < 4 {
 			fmt.Println("Too few arguments")
 			return "error"
@@ -214,8 +214,13 @@ func ExecuteCommand(command string) string {
 		if strings.ToLower(words[0]) == "get" {
 			value := db.Get(settings, key, poolName, schemaName, collectionName)
 			if value != "" {
-				fmt.Printf("%v = %v\n", key, value)
-				return "ok"
+				return key + " = " + value
+			}
+			return "error"
+		} else if strings.ToLower(words[0]) == "getsecondary" {
+			value := db.GetBySecondaryKey(settings, key, poolName, schemaName, collectionName)
+			if value != "" {
+				return key + " = " + value
 			}
 			return "error"
 		} else if strings.ToLower(words[0]) == "delete" {
@@ -233,7 +238,7 @@ func ExecuteCommand(command string) string {
 		return "error"
 
 	// Get range
-	case "getrange":
+	case "getrange", "getrangesecondary":
 		if len(words) < 5 {
 			fmt.Println("Too few arguments")
 			return "error"
@@ -254,12 +259,26 @@ func ExecuteCommand(command string) string {
 		schemaName := poolAndSchemaAndCollection[1]
 		collectionName := poolAndSchemaAndCollection[2]
 
-		result := db.GetRange(settings, leftBound, rightBound, poolName, schemaName, collectionName)
-		if result != nil && len(*result) != 0 {
-			for k, v := range *result {
-				fmt.Printf("%v = %v\n", k, v)
+		if strings.ToLower(words[0]) == "getrange" {
+			result := db.GetRange(settings, leftBound, rightBound, poolName, schemaName, collectionName)
+			if result != nil && len(*result) != 0 {
+				str := new(strings.Builder)
+				for k, v := range *result {
+					str.WriteString(k + " = " + v + "\n")
+				}
+				return str.String()
 			}
-			return "ok"
+			return "error"
+		} else if strings.ToLower(words[0]) == "getrangesecondary" {
+			result := db.GetRangeBySecondaryKey(settings, leftBound, rightBound, poolName, schemaName, collectionName)
+			if result != nil && len(*result) != 0 {
+				str := new(strings.Builder)
+				for k, v := range *result {
+					str.WriteString(k + " = " + v + "\n")
+				}
+				return str.String()
+			}
+			return "error"
 		}
 		return "error"
 
@@ -295,8 +314,7 @@ func ExecuteCommand(command string) string {
 
 		value := task2.GetValueByTime(collectionName, key, time)
 		if value != "" {
-			fmt.Printf("%v = %v\n", key, value)
-			return "ok"
+			return key + " = " + value + " (at " + time.Format("2006-01-02 15:04:05.000000 MST") + ")"
 		}
 		return "error"
 	}

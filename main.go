@@ -46,8 +46,11 @@ func executeCommand(db *task0.Database, settings map[string]string, command stri
 			return "error"
 		}
 	default:
-		database.ExecuteCommand(command)
-		return "ok"
+		res := database.ExecuteCommand(command)
+		if res != "ok" {
+			fmt.Printf("%s\n", res)
+		}
+		return res
 	}
 
 }

@@ -1,9 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DBMS Web API UI</title>
+{{define "title"}}DBMS Web API UI{{end}}
+
+{{define "styles"}}
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -86,12 +83,16 @@
             margin: 20px 0;
         }
     </style>
+{{end}}
+
+{{define "imports"}}
     <link href="web/select2/select2.min.css" rel="stylesheet"/>
     <script src="web/select2/jquery-3.4.1.js"></script>
     <script src="web/select2/select2.full.min.js"></script>
-    <script src="web/handleSubmit.js"></script>
-</head>
-<body>
+    <script src="web/handleSubmit.js?v=2"></script>
+{{end}}
+
+{{define "body"}}
     <h1>Your whole DB:</h1>
     <p>(may contain old data, to get latest data, please use get operations)</p>
     <div class="container">
@@ -264,7 +265,7 @@
         </form>
         <form id="update" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
             <label>update</label>
-            <select id="updater">
+            <select name="key" id="updater">
                 {{range $i, $p := .Pools}}
                     {{range $j, $s := .Schemas}}
                         {{range $k, $c := .Collections}}
@@ -285,7 +286,7 @@
         </form>
         <form id="delete" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
             <label>delete</label>
-            <select id="deleter">
+            <select name="key" id="deleter">
                 {{range $i, $p := .Pools}}
                     {{range $j, $s := .Schemas}}
                         {{range $k, $c := .Collections}}
@@ -328,12 +329,12 @@
         </form>
         <form id="getSecondary" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
             <label>show value by secondary key</label>
-            <select id="getSecKey" name="key">
+            <select id="getSecKey" name="secondaryKey">
                 {{range $i, $p := .Pools}}
                     {{range $j, $s := .Schemas}}
                         {{range $k, $c := .Collections}}
                             {{range .Datas}}
-                                <option value="{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.Key}}">{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.SecondaryKey}}</option>
+                                <option value="{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.SecondaryKey}}">{{$p.Name}}.{{$s.Name}}.{{$c.Name}}.{{.SecondaryKey}}</option>
                             {{end}}
                         {{end}}
                     {{end}}
@@ -375,7 +376,7 @@
             <label>-</label>
             <input name="secondaryKey" type="text" placeholder="right">
             <label>in</label>
-            <select id="getRangeCollection">
+            <select name="collection" id="getRangeCollection">
                 {{range $i, $p := .Pools}}
                     {{range $j, $s := .Schemas}}
                         {{range .Collections}}
@@ -393,11 +394,11 @@
         </form>
         <form id="getRangeSecondary" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
             <label>show values by secondary keys in range</label>
-            <input type="text" placeholder="left">
+            <input name="key" type="text" placeholder="left">
             <label>-</label>
-            <input type="text" placeholder="right">
+            <input name="secondaryKey" type="text" placeholder="right">
             <label>in</label>
-            <select id="getRangeSecondaryCollection">
+            <select name="collection" id="getRangeSecondaryCollection">
                 {{range $i, $p := .Pools}}
                     {{range $j, $s := .Schemas}}
                         {{range .Collections}}
@@ -414,20 +415,16 @@
             <button type="submit" >OK</button>
         </form>
     </div>
+{{end}}
 
-    <div class="divider"></div>
-
-    <div>
-        &copy; 2023 Dmitry Rosin. MIT License.
-    </div>
-</body>
+{{define "afterbody"}}
 <script>
     $(document).ready(function() {
             $('.select2.select2-container').each(function() {
                 var currentWidth = $(this).width();
-                var newWidth = currentWidth * 1.15;
+                var newWidth = currentWidth * 1.2;
                 $(this).css('width', newWidth + 'px');
             });
         });
 </script>
-</html>
+{{end}}

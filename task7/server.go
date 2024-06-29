@@ -245,7 +245,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 		db.Pools = append(db.Pools, newPool)
 	}
 
-	t, _ := template.ParseFiles("web/mainSU.html")
+	t, _ := template.ParseFiles("web/template.html", "web/mainSU.html")
 	err := t.Execute(w, db)
 	if err != nil {
 		println(err.Error())

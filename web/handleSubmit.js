@@ -22,7 +22,8 @@ function handleSubmit(event, url) {
     .then(data => {
         console.log('Success:', data);
         if (data.message !== "ok" && data.message !== "") {
-            alert(data.message);
+            cleanedStr = data.message.replace(/\x00/g, '');
+            alert(cleanedStr);
         } else {
             location.reload();
         }

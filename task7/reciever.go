@@ -85,7 +85,7 @@ func receiver(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		col := strings.Split(recieved.Collection, ".")
-		response = database.ExecuteCommand(recieved.Operation + " " + col[2] + " in " + col[1] + "." + col[0])
+		response = database.ExecuteCommand(recieved.Operation + " " + col[2] + " in " + col[0] + "." + col[1])
 
 	case "set":
 		if recieved.Key == "" {
