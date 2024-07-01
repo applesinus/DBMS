@@ -291,8 +291,7 @@ func ExecuteCommand(command string) string {
 	// Get by time if persistant is on
 	case "getat":
 		if settings["persistant"] != "on" {
-			fmt.Println("Persistant is not on")
-			return "error"
+			return "Persistant is not on"
 		}
 
 		if len(words) < 6 {
@@ -300,7 +299,10 @@ func ExecuteCommand(command string) string {
 			return "error"
 		}
 
-		time, err := time.Parse("2006-01-02 15:04:05.000000 MST", words[1]+" "+words[2]+" "+words[3])
+		tim, err := time.Parse("2006-01-02 15:04 MST", words[1]+" "+words[2]+" "+words[3])
+		if tim.After(time.Now()) {
+			return "Time is in future"
+		}
 		if err != nil {
 			fmt.Printf("Error on parsing time: %v\n", err.Error())
 			return "error"
@@ -318,9 +320,9 @@ func ExecuteCommand(command string) string {
 		}
 		collectionName := poolAndSchemaAndCollection[2]
 
-		value := task2.GetValueByTime(collectionName, key, time)
+		value := task2.GetValueByTime(collectionName, key, tim)
 		if value != "" {
-			return key + " = " + value + " (at " + time.Format("2006-01-02 15:04:05.000000 MST") + ")"
+			return key + " = " + value + " (at " + tim.Format("2006-01-02 15:04:05.000000 MST") + ")"
 		}
 		return "error"
 	}

@@ -16,7 +16,7 @@ var PersistantCollections = make(map[string]collection)
 
 func SaveCollection(collName string, collElements interfaces.CollectionInterface) {
 	PersistantCollections[collName] = collection{
-		firstState: collElements,
+		firstState: collElements.Copy(),
 		commands:   make([]string, 0),
 		timings:    make([]time.Time, 0),
 	}

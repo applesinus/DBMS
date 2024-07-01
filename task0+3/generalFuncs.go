@@ -251,8 +251,5 @@ func (db *Database) Delete(settings map[string]string, key string, pool string, 
 		return "error"
 	}
 	ok := db.pools[pool].schema[schema].collection[coll].Delete(key)
-	if ok != "ok" {
-		return "error"
-	}
-	return "ok"
+	return ok
 }

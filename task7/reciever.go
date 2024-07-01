@@ -163,8 +163,8 @@ func receiver(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		key := strings.Split(recieved.Key, ".")
-		fTime := ""
-		// TODO convert time format to time.Time
+		fTime := recieved.Time[:10] + " " + recieved.Time[11:] + " MSK"
+
 		response = database.ExecuteCommand(recieved.Operation + " " + fTime + " " + key[3] + " in " + key[0] + "." + key[1] + "." + key[2])
 
 	default:
