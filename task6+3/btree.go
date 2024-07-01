@@ -204,7 +204,6 @@ func (node *nodeBtree) getRange(leftBound string, rightBound string, result *map
 	return "ok"
 }
 
-// newNodeBtree создает новый узел B-дерева
 func newNodeBtree(t int, isLeaf bool) *nodeBtree {
 	return &nodeBtree{
 		isLeaf:   isLeaf,
@@ -215,7 +214,6 @@ func newNodeBtree(t int, isLeaf bool) *nodeBtree {
 	}
 }
 
-// insert добавляет новое значение в B-дерево
 func (tree *Btree) insert(key, altKey string, value *task4.TrieWord) {
 	if tree.root == nil {
 		tree.root = newNodeBtree(tree.t, true)
@@ -259,7 +257,6 @@ func (tree *Btree) insert(key, altKey string, value *task4.TrieWord) {
 	}
 }
 
-// insertNonFull вставляет новое значение в неполный узел B-дерева
 func (node *nodeBtree) insertNonFull(key, altKey string, value *task4.TrieWord, t int) {
 	i := node.n - 1
 
@@ -288,7 +285,6 @@ func (node *nodeBtree) insertNonFull(key, altKey string, value *task4.TrieWord, 
 	}
 }
 
-// SplitChild делит полный дочерний узел
 func (node *nodeBtree) splitChild(i int, y *nodeBtree, t int) {
 	z := newNodeBtree(t, y.isLeaf)
 	z.n = t - 1
@@ -324,7 +320,6 @@ func (node *nodeBtree) splitChild(i int, y *nodeBtree, t int) {
 	node.n++
 }
 
-// search ищет ключ в поддереве, укорененном этим узлом
 func (node *nodeBtree) search(key string) (*nodeBtree, int) {
 	if node == nil {
 		return nil, -1
@@ -345,7 +340,6 @@ func (node *nodeBtree) search(key string) (*nodeBtree, int) {
 	return node.children[i].search(key)
 }
 
-// Remove удаляет ключ из B-дерева
 func (tree *Btree) remove(key string) string {
 	if tree.root == nil {
 		return "empty tree"
@@ -380,7 +374,6 @@ func (tree *Btree) remove(key string) string {
 	return "ok"
 }
 
-// Remove удаляет ключ из поддерева, укорененного этим узлом
 func (node *nodeBtree) remove(key string, t int) {
 	idx := node.findKey(key)
 
@@ -410,7 +403,6 @@ func (node *nodeBtree) remove(key string, t int) {
 	}
 }
 
-// FindKey находит индекс первого ключа, который больше или равен ключу
 func (node *nodeBtree) findKey(key string) int {
 	idx := 0
 	for idx < node.n && node.keys[idx] < key {
@@ -419,7 +411,6 @@ func (node *nodeBtree) findKey(key string) int {
 	return idx
 }
 
-// RemoveFromLeaf удаляет ключ из листового узла
 func (node *nodeBtree) removeFromLeaf(idx int) {
 	for i := idx + 1; i < node.n; i++ {
 		node.keys[i-1] = node.keys[i]
@@ -429,7 +420,6 @@ func (node *nodeBtree) removeFromLeaf(idx int) {
 	node.n--
 }
 
-// RemoveFromNonLeaf удаляет ключ из нелистового узла
 func (node *nodeBtree) removeFromNonLeaf(idx int, t int) {
 	key := node.keys[idx]
 
@@ -447,7 +437,6 @@ func (node *nodeBtree) removeFromNonLeaf(idx int, t int) {
 	}
 }
 
-// GetPred получает предшественника ключа
 func (node *nodeBtree) getPred(idx int) string {
 	cur := node.children[idx]
 	for !cur.isLeaf {
@@ -456,7 +445,6 @@ func (node *nodeBtree) getPred(idx int) string {
 	return cur.keys[cur.n-1]
 }
 
-// GetSucc получает преемника ключа
 func (node *nodeBtree) getSucc(idx int) string {
 	cur := node.children[idx+1]
 	for !cur.isLeaf {
@@ -465,7 +453,6 @@ func (node *nodeBtree) getSucc(idx int) string {
 	return cur.keys[0]
 }
 
-// Fill заполняет дочерний узел, который имеет меньше t-1 ключей
 func (node *nodeBtree) fill(idx, t int) {
 	if idx != 0 && node.children[idx-1].n >= t {
 		node.borrowFromPrev(idx)
@@ -480,7 +467,6 @@ func (node *nodeBtree) fill(idx, t int) {
 	}
 }
 
-// BorrowFromPrev заимствует ключ у предыдущего дочернего узла
 func (node *nodeBtree) borrowFromPrev(idx int) {
 	child := node.children[idx]
 	sibling := node.children[idx-1]
@@ -513,7 +499,6 @@ func (node *nodeBtree) borrowFromPrev(idx int) {
 	sibling.n--
 }
 
-// BorrowFromNext заимствует ключ у следующего дочернего узла
 func (node *nodeBtree) borrowFromNext(idx int) {
 	child := node.children[idx]
 	sibling := node.children[idx+1]
@@ -546,7 +531,6 @@ func (node *nodeBtree) borrowFromNext(idx int) {
 	sibling.n--
 }
 
-// Merge объединяет дочерний узел с его соседом
 func (node *nodeBtree) merge(idx, t int) {
 	child := node.children[idx]
 	sibling := node.children[idx+1]
