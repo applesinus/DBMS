@@ -14,6 +14,7 @@ type data struct {
 	Pools           []pool
 	RecieverURL     string
 	CollectionTypes []string
+	User            string
 }
 
 type pool struct {
@@ -220,6 +221,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 		RecieverURL:     "http://localhost:8080/receiver",
 		CollectionTypes: database.AvaliableCollectionTypes(),
 		Pools:           []pool{},
+		User:            "TODO",
 	}
 	pools := database.ListPools()
 	for _, p := range pools {
@@ -242,7 +244,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 		db.Pools = append(db.Pools, newPool)
 	}
 
-	t, _ := template.ParseFiles("web/template.html", "web/mainSU.html")
+	t, _ := template.ParseFiles("web/template.html", "web/blocks_user.html", "web/mainSU.html")
 	err := t.Execute(w, db)
 	if err != nil {
 		println(err.Error())

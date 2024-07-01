@@ -6,14 +6,32 @@
     <title>{{template "title" .}}</title>
     {{template "styles" .}}
     {{template "imports" .}}
+    <link rel="stylesheet" type="text/css" href="/web/style.css">
 </head>
 <body>
-    {{template "body" .}}
+    <header>
+        <div>
+            <h1><a href="/">Custom DBMS</a></h1>
+            <p>University project</p>
+        </div>
 
-    <div class="footer-divider" style="width: 100%; margin: 20px 0; border-top: 2px solid #ccc"></div>
-    <div style="text-align: center">
-        &copy; 2023 Dmitry Rosin. MIT License.
-    </div>
+        <div>
+            <account>
+                {{template "logout" .}}
+            </account>
+        </div>
+    </header>
+
+    <main>
+        {{template "body" .}}
+    </main>
+
+    <footer>
+        <div class="footer-divider" style="width: 100%; margin: 20px 0; border-top: 2px solid #ccc"></div>
+        <div style="text-align: center">
+            &copy; 2023 Dmitry Rosin. MIT License.
+        </div>
+    </footer>
 </body>
 {{template "afterbody" .}}
 </html>
