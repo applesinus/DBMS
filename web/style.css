@@ -24,7 +24,8 @@ header {
 }
 
 header a {
-    color:#fff
+    color:#fff;
+    margin: 3px;
 }
 header a:hover {
     text-decoration: none;

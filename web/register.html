@@ -1,0 +1,94 @@
+{{define "title"}}Login{{end}}
+
+{{define "styles"}}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            max-height: 50%;
+            width: 100%;
+        }
+        .container div {
+            border: 1px solid #ccc;
+            width: 15%;
+            margin: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+            border-width: 2px;
+            border-color: #fff;
+        }
+        .operations {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .operations form {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #fff;
+            border-radius: 5px;
+        }
+        input {
+            min-width: 50px;
+            max-width: 500px;
+            height: 25px;
+            margin: 0 10px;
+            padding: 5px;
+            border: 1px solid #fff;
+            border-radius: 3px;
+        }
+        .divider {
+            width: 100%;
+            border-top: 2px solid #ccc;
+            margin: 20px 0;
+        }
+        button {
+            height: 35px;
+            padding: 0 10px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .divider {
+            width: 100%;
+            border-top: 2px solid #ccc;
+            margin: 20px 0;
+        }
+    </style>
+{{end}}
+
+{{define "imports"}}
+{{end}}
+
+{{define "body"}}
+    <div class="operations">
+        <p>{{.Message}}</p>
+        <form id="register" method="post">
+            <label>register</label>
+            <input name="login" type="text" placeholder="login">
+            <label>password</label>
+            <input name="password" type="password" placeholder="password">
+            <button type="submit" >OK</button>
+        </form>
+    </div>
+{{end}}
+
+{{define "afterbody"}}
+{{end}}

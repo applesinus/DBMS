@@ -1,4 +1,4 @@
-package task7
+package task789
 
 import (
 	"DBMS/database"

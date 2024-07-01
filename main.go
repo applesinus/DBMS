@@ -3,7 +3,7 @@ package main
 import (
 	"DBMS/database"
 	"DBMS/task0+3"
-	"DBMS/task7"
+	"DBMS/task789"
 	"bufio"
 	"flag"
 	"fmt"
@@ -84,7 +84,7 @@ func help() {
 }
 
 func main() {
-	server := task7.StartHTTPServer(8080)
+	server := task789.StartHTTPServer(8080)
 
 	filepath := flag.String("f", "", "initial filepath")
 	persistant := flag.Bool("p", false, "persistant mode")
@@ -104,7 +104,7 @@ func main() {
 		if ret == "error" {
 			fmt.Println("Could not execute file")
 		} else if ret == "exit" {
-			task7.StopHTTPServer(server)
+			task789.StopHTTPServer(server)
 			return
 		}
 	}
@@ -125,7 +125,7 @@ func main() {
 		ret := executeCommand(db, settings, line)
 
 		if ret == "exit" {
-			task7.StopHTTPServer(server)
+			task789.StopHTTPServer(server)
 			return
 		}
 	}
