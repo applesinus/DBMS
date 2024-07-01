@@ -49,7 +49,7 @@ func NewTree(variant string) *Tree {
 			t = 2
 		}
 		return &Tree{
-			self:    &Btree{root: nil, t: t},
+			self:    &Btree{root: nil, secondaryRoot: nil, t: t},
 			variant: variant,
 		}
 	}

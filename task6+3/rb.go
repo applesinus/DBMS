@@ -161,12 +161,11 @@ func (tree *RB) set(key string, secondaryKey string, value string) string {
 
 func (tree *RB) remove(key string) string {
 	node, _ := tree.search(tree.root, key)
-	secondaryNode := node.altKey
-	secondaryParent := secondaryNode.parent
-
 	if node == nil {
 		return "does not exist"
 	}
+	secondaryNode := node.altKey
+	secondaryParent := secondaryNode.parent
 	parent := node.parent
 
 	response := tree.remover(tree.root, node, parent)
