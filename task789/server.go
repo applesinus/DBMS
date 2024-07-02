@@ -123,6 +123,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 				for _, d := range datas {
 					newData := ValuesData{Key: d.Key, SecondaryKey: d.SecondaryKey, Value: d.Value}
 					newrCollection.Datas = append(newrCollection.Datas, newData)
+					newwCollection.Datas = append(newwCollection.Datas, newData)
 				}
 
 				if len(u.access) == 1 && u.access[0] == "all" {
