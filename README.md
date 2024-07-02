@@ -4,7 +4,7 @@
 # Русский
 <p id="ru"><h3></h3></p>
 
-<p>Набор лабораторных работ, объединенных в единый проект, по предмету "Теория языков программирования, трансляторов и вычислительных систем". Оценка в семестре - <b>TODO</b>.</p>
+<p>Набор лабораторных работ, объединенных в единый проект, по предмету "Базы данных II". Оценка в семестре - <b>TODO</b>.</p>
 
 <h2>Web API UI</h2>
 <p></p>
@@ -122,7 +122,7 @@ delete <key> in <pool name>.<scheme name>.<collection name>
 <p id="en"><h3></h3></p>
 <p>(translated by Google)</p>
 
-<p>A set of laboratory works, combined into a single project, on the subject "Theory of programming languages, translators and computing systems." Semester grade - <b>TODO</b>.</p>
+<p>A set of laboratory works, combined into a single project, on the subject "Databases II". Semester grade - <b>TODO</b>.</p>
 
 <h2>Web API UI</h2>
 <p></p>
