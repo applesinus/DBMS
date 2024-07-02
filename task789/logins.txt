@@ -1,1 +1,2 @@
 su 21232f297a57a5a743894a0e4a801fc3 superuser all
+justUser 25f9e794323b453885f5181f1b624d0b user none
