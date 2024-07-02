@@ -21,6 +21,12 @@ type recieved struct {
 }
 
 func receiver(w http.ResponseWriter, r *http.Request) {
+	ok, _, _ := isLoggedIn(w, r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	fmt.Printf("Received data: %v\n", r.Body)
 	var recieved recieved
 

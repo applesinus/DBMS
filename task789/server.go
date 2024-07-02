@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"text/template"
 )
 
 type data struct {
-	Pools           []pool
+	Wpools          []pool
+	Rpools          []pool
 	RecieverURL     string
 	CollectionTypes []string
 	User            string
@@ -37,6 +39,8 @@ type ValuesData task0.Datas
 
 func initHandlers() {
 	http.HandleFunc("/", mainPage)
+	http.HandleFunc("/admin", adminPage)
+
 	http.HandleFunc("/login", loginPage)
 	http.HandleFunc("/register", registerPage)
 	http.HandleFunc("/logout", logoutPage)
@@ -65,8 +69,8 @@ func StartHTTPServer(port int) *http.Server {
 	<-serverIsRunning
 	close(serverIsRunning)
 
-	initHandlers()
 	loadLogins()
+	initHandlers()
 
 	return server
 }
@@ -85,38 +89,86 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
+	u := users.List[username]
 
 	db := data{
 		RecieverURL:     "http://localhost:8080/receiver",
 		CollectionTypes: database.AvaliableCollectionTypes(),
-		Pools:           []pool{},
+		Wpools:          []pool{},
+		Rpools:          []pool{},
 		User:            username,
+		Message:         u.Role,
 	}
+
 	pools := database.ListPools()
 	for _, p := range pools {
-		newPool := pool{Name: p}
+		newrPool := pool{Name: p}
+		newwPool := pool{Name: p}
+
+		if len(u.access) == 1 && u.access[0] == "none" {
+			db.Wpools = append(db.Wpools, newwPool)
+			db.Rpools = append(db.Rpools, newrPool)
+			continue
+		}
+
 		schemas := database.ListSchemas(p)
 		for _, s := range schemas {
-			newSchema := schema{Name: s}
+			newrSchema := schema{Name: s}
+			newwSchema := schema{Name: s}
 			collections := database.ListCollections(p, s)
 			for _, c := range collections {
-				newCollection := collection{Name: c}
+				newrCollection := collection{Name: c}
+				newwCollection := collection{Name: c}
 				datas := database.ListDatas(p, s, c)
 				for _, d := range datas {
 					newData := ValuesData{Key: d.Key, SecondaryKey: d.SecondaryKey, Value: d.Value}
-					newCollection.Datas = append(newCollection.Datas, newData)
+					newrCollection.Datas = append(newrCollection.Datas, newData)
 				}
-				newSchema.Collections = append(newSchema.Collections, newCollection)
-			}
-			newPool.Schemas = append(newPool.Schemas, newSchema)
-		}
-		db.Pools = append(db.Pools, newPool)
-	}
 
-	t, _ := template.ParseFiles("web/template.html", "web/blocks_user.html", "web/mainSU.html")
+				if len(u.access) == 1 && u.access[0] == "all" {
+					newwSchema.Collections = append(newwSchema.Collections, newwCollection)
+					newrSchema.Collections = append(newrSchema.Collections, newrCollection)
+					continue
+				}
+
+				poolAccess := ""
+				schemaAccess := ""
+				collectionAccess := ""
+				for _, access := range u.access {
+					words := strings.Split(access, "/")
+					mod := words[1]
+					words = strings.Split(words[0], ".")
+
+					if len(words) == 1 && words[0] == p {
+						poolAccess = mod
+					} else if len(words) == 2 && words[0] == p && words[1] == s {
+						schemaAccess = mod
+					} else if len(words) == 3 && words[0] == p && words[1] == s && words[2] == c {
+						collectionAccess = mod
+					}
+				}
+
+				if collectionAccess == "w" || (collectionAccess == "" && schemaAccess == "w") ||
+					(collectionAccess == "" && schemaAccess == "" && poolAccess == "w") {
+					newwSchema.Collections = append(newwSchema.Collections, newwCollection)
+					newrSchema.Collections = append(newrSchema.Collections, newrCollection)
+				}
+
+				if collectionAccess == "r" || (collectionAccess == "" && schemaAccess == "r") ||
+					(collectionAccess == "" && schemaAccess == "" && poolAccess == "r") {
+					newrSchema.Collections = append(newrSchema.Collections, newrCollection)
+				}
+			}
+			newwPool.Schemas = append(newwPool.Schemas, newwSchema)
+			newrPool.Schemas = append(newrPool.Schemas, newrSchema)
+		}
+		db.Rpools = append(db.Rpools, newrPool)
+		db.Wpools = append(db.Wpools, newwPool)
+	}
+	t, _ := template.ParseFiles("web/template.html", "web/blocks_user.html", "web/main.html")
 	err := t.Execute(w, db)
 	if err != nil {
-		println(err.Error())
+		fmt.Println(err.Error())
 	}
 }
 
@@ -142,7 +194,7 @@ func loginPage(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.ParseFiles("web/template.html", "web/blocks_notuser.html", "web/login.html")
 	err := t.Execute(w, nil)
 	if err != nil {
-		println(err.Error())
+		fmt.Println(err.Error())
 	}
 }
 
@@ -196,11 +248,108 @@ func registerPage(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.ParseFiles("web/template.html", "web/blocks_notuser.html", "web/register.html")
 	err := t.Execute(w, message)
 	if err != nil {
-		println(err.Error())
+		fmt.Println(err.Error())
 	}
 }
 
 func logoutPage(w http.ResponseWriter, r *http.Request) {
-	logout(w)
+	ok, _, _ := isLoggedIn(w, r)
+	if ok {
+		logout(w)
+	}
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
+func adminPage(w http.ResponseWriter, r *http.Request) {
+	ok, username, res := isLoggedIn(w, r)
+	if res != "ok" || !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	u := users.List[username]
+	if u.Role != "admin" && u.Role != "superuser" {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	if r.Method == "POST" {
+		targetUsername := r.FormValue("login")
+		user, ok := users.List[targetUsername]
+		if !ok {
+			fmt.Println("Unknown user: " + targetUsername)
+			return
+		}
+		if user.Role == "superuser" {
+			fmt.Println("Can't change superuser")
+			return
+		}
+		if u.Role == "admin" && user.Role == "admin" {
+			fmt.Println("One admin can't change another admin")
+			return
+		}
+
+		op := r.FormValue("op")
+
+		switch op {
+		case "delete":
+			deleteUser(targetUsername)
+		case "password":
+			res := updatePassword(w, targetUsername, r.FormValue("password"))
+			if res != "ok" {
+				fmt.Println(res)
+			}
+		case "role":
+			res := updateRole(w, targetUsername, r.FormValue("role"))
+			if res != "ok" {
+				fmt.Println(res)
+			}
+		case "access":
+			res := updateAccess(w, targetUsername, r.FormValue("access"), r.FormValue("read"), r.FormValue("write"))
+			if res != "ok" {
+				fmt.Println(res)
+			}
+		default:
+			fmt.Println("unknown admin operation: " + op)
+		}
+	}
+
+	pools := database.ListPools()
+	poolsList := []pool{}
+	for _, p := range pools {
+		newPool := pool{Name: p}
+		schemas := database.ListSchemas(p)
+		for _, s := range schemas {
+			newSchema := schema{Name: s}
+			collections := database.ListCollections(p, s)
+			for _, c := range collections {
+				newCollection := collection{Name: c}
+				datas := database.ListDatas(p, s, c)
+				for _, d := range datas {
+					newData := ValuesData{Key: d.Key, SecondaryKey: d.SecondaryKey, Value: d.Value}
+					newCollection.Datas = append(newCollection.Datas, newData)
+				}
+				newSchema.Collections = append(newSchema.Collections, newCollection)
+			}
+			newPool.Schemas = append(newPool.Schemas, newSchema)
+		}
+		poolsList = append(poolsList, newPool)
+	}
+
+	somaData := struct {
+		Users logins
+		User  string
+		Pools []pool
+	}{
+		Users: users,
+		User:  username,
+		Pools: poolsList,
+	}
+
+	t, _ := template.ParseFiles("web/template.html", "web/blocks_user.html", "web/admin.html")
+
+	err := t.Execute(w, somaData)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }

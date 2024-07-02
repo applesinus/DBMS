@@ -67,7 +67,7 @@ main {
     justify-content: center;
     width: 100%;
     align-items: center;
-    max-width: 800px;
+    max-width: 1000px;
     margin: 80px auto 20px;
     padding: 50px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

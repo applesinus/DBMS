@@ -82,18 +82,26 @@
 {{end}}
 
 {{define "imports"}}
-    <link href="web/select2/select2.min.css" rel="stylesheet"/>
+    <link href="web/select2/select2.min.css?v=2" rel="stylesheet"/>
     <script src="web/select2/jquery-3.4.1.js"></script>
     <script src="web/select2/select2.full.min.js"></script>
     <script src="web/handleSubmit.js?v=2"></script>
 {{end}}
 
 {{define "body"}}
+    {{if or (eq "superuser" .Message) (eq "admin" .Message)}}
+        <div class="operations">
+            <form id="goto">
+                <input type="button" value="Go to admin panel" onclick="window.location.href='/admin'">
+            </form>
+        </div>
+    {{end}}
+
     <h1>Your whole DB:</h1>
     <p>(may contain old data, to get latest data, please use get operations)</p>
     <div class="container">
-        <table style="width: 50%; text-align: center;">
-            {{range .Pools}}
+        <table style="min-width: 75%; text-align: center;">
+            {{range .Rpools}}
                 <tr><td>
                     <table>
                         <caption>
@@ -133,108 +141,110 @@
         </table>
     </div>
     <div class="operations">
-        <form id="createPool" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
-            <label>new pool</label>
-            <input name="pool" type="text" placeholder="name">
-            <button type="submit" >OK</button>
-        </form>
-        <form id="deletePool" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
-            <label>delete pool</label>
-            <select id="delPool" name="pool">
-                {{range .Pools}}
-                    <option value="{{.Name}}">{{.Name}}</option>
-                {{end}}
-            </select>
-            <script>
-                $(document).ready(function() {
-                    $('#delPool').select2();
-                });
-            </script>
-            <button type="submit" >OK</button>
-        </form>
-
-
-        <form id="createSchema" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
-            <label>new schema</label>
-            <input name="schema" type="text" placeholder="name">
-            <label>in</label>
-            <select id="newSchema" name="pool">
-                {{range .Pools}}
-                    <option value="{{.Name}}">{{.Name}}</option>
-                {{end}}
-            </select>
-            <script>
-                $(document).ready(function() {
-                    $('#newSchema').select2();
-                });
-            </script>
-            <button type="submit" >OK</button>
-        </form>
-        <form id="deleteSchema" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
-            <label>delete schema</label>
-            <select id="delSchema" name="schema">
-                {{range $i, $p := .Pools}}
-                    {{range .Schemas}}
-                        <option value="{{$p.Name}}.{{.Name}}">{{$p.Name}}.{{.Name}}</option>
+        {{if or (eq "superuser" .Message) (eq "admin" .Message)}}
+            <form id="createPool" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+                <label>new pool</label>
+                <input name="pool" type="text" placeholder="name">
+                <button type="submit" >OK</button>
+            </form>
+            <form id="deletePool" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+                <label>delete pool</label>
+                <select id="delPool" name="pool">
+                    {{range .Wpools}}
+                        <option value="{{.Name}}">{{.Name}}</option>
                     {{end}}
-                {{end}}
-            </select>
-            <script>
-                $(document).ready(function() {
-                    $('#delSchema').select2();
-                });
-            </script>
-            <button type="submit" >OK</button>
-        </form>
+                </select>
+                <script>
+                    $(document).ready(function() {
+                        $('#delPool').select2();
+                    });
+                </script>
+                <button type="submit" >OK</button>
+            </form>
 
 
-        <form id="createCollection" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
-            <label>new collection</label>
-            <input name="collection" type="text" placeholder="name">
-            <label>of type</label>
-            <select id="newCollType" name="collectionType">
-                {{range .CollectionTypes}}
-                    <option value="{{.}}">{{.}}</option>
-                {{end}}
-            </select>
-            <script>
-                $(document).ready(function() {
-                    $('#newCollType').select2();
-                });
-            </script>
-            <label>in</label>
-            <select id="newColl" name="schema">
-                {{range $i, $p := .Pools}}
-                    {{range .Schemas}}
-                        <option value="{{$p.Name}}.{{.Name}}">{{$p.Name}}.{{.Name}}</option>
+            <form id="createSchema" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+                <label>new schema</label>
+                <input name="schema" type="text" placeholder="name">
+                <label>in</label>
+                <select id="newSchema" name="pool">
+                    {{range .Wpools}}
+                        <option value="{{.Name}}">{{.Name}}</option>
                     {{end}}
-                {{end}}
-            </select>
-            <script>
-                $(document).ready(function() {
-                    $('#newColl').select2();
-                });
-            </script>
-            <button type="submit" >OK</button>
-        </form>
-        <form id="deleteCollection" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
-            <label>delete collection</label>
-            <select id="delColl" name="collection">
-                {{range $i, $p := .Pools}}
-                    {{range $j, $s := .Schemas}}
-                        {{range .Collections}}
-                            <option value="{{$p.Name}}.{{$s.Name}}.{{.Name}}">{{$p.Name}}.{{$s.Name}}.{{.Name}}</option>
+                </select>
+                <script>
+                    $(document).ready(function() {
+                        $('#newSchema').select2();
+                    });
+                </script>
+                <button type="submit" >OK</button>
+            </form>
+            <form id="deleteSchema" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+                <label>delete schema</label>
+                <select id="delSchema" name="schema">
+                    {{range $i, $p := .Wpools}}
+                        {{range .Schemas}}
+                            <option value="{{$p.Name}}.{{.Name}}">{{$p.Name}}.{{.Name}}</option>
                         {{end}}
                     {{end}}
-                {{end}}
-            </select>
-            <script>
-                $(document).ready(function() {
-                    $('#delColl').select2();
-                });
-            </script>
-            <button type="submit" >OK</button>
-        </form>
+                </select>
+                <script>
+                    $(document).ready(function() {
+                        $('#delSchema').select2();
+                    });
+                </script>
+                <button type="submit" >OK</button>
+            </form>
+
+
+            <form id="createCollection" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+                <label>new collection</label>
+                <input name="collection" type="text" placeholder="name">
+                <label>of type</label>
+                <select id="newCollType" name="collectionType">
+                    {{range .CollectionTypes}}
+                        <option value="{{.}}">{{.}}</option>
+                    {{end}}
+                </select>
+                <script>
+                    $(document).ready(function() {
+                        $('#newCollType').select2();
+                    });
+                </script>
+                <label>in</label>
+                <select id="newColl" name="schema">
+                    {{range $i, $p := .Wpools}}
+                        {{range .Schemas}}
+                            <option value="{{$p.Name}}.{{.Name}}">{{$p.Name}}.{{.Name}}</option>
+                        {{end}}
+                    {{end}}
+                </select>
+                <script>
+                    $(document).ready(function() {
+                        $('#newColl').select2();
+                    });
+                </script>
+                <button type="submit" >OK</button>
+            </form>
+            <form id="deleteCollection" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
+                <label>delete collection</label>
+                <select id="delColl" name="collection">
+                    {{range $i, $p := .Wpools}}
+                        {{range $j, $s := .Schemas}}
+                            {{range .Collections}}
+                                <option value="{{$p.Name}}.{{$s.Name}}.{{.Name}}">{{$p.Name}}.{{$s.Name}}.{{.Name}}</option>
+                            {{end}}
+                        {{end}}
+                    {{end}}
+                </select>
+                <script>
+                    $(document).ready(function() {
+                        $('#delColl').select2();
+                    });
+                </script>
+                <button type="submit" >OK</button>
+            </form>
+        {{end}}
 
 
         <form id="set" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
@@ -244,7 +254,7 @@
             <input id="value" type="text" placeholder="value">
             <label>in</label>
             <select id="setCollection" name="collection">
-                {{range $i, $p := .Pools}}
+                {{range $i, $p := .Wpools}}
                     {{range $j, $s := .Schemas}}
                         {{range .Collections}}
                             <option value="{{$p.Name}}.{{$s.Name}}.{{.Name}}">{{$p.Name}}.{{$s.Name}}.{{.Name}}</option>
@@ -262,7 +272,7 @@
         <form id="update" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
             <label>update</label>
             <select name="key" id="updater">
-                {{range $i, $p := .Pools}}
+                {{range $i, $p := .Wpools}}
                     {{range $j, $s := .Schemas}}
                         {{range $k, $c := .Collections}}
                             {{range .Datas}}
@@ -283,7 +293,7 @@
         <form id="delete" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
             <label>delete</label>
             <select name="key" id="deleter">
-                {{range $i, $p := .Pools}}
+                {{range $i, $p := .Wpools}}
                     {{range $j, $s := .Schemas}}
                         {{range $k, $c := .Collections}}
                             {{range .Datas}}
@@ -306,7 +316,7 @@
         <form id="get" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
             <label>show value of</label>
             <select id="getKey" name="key">
-                {{range $i, $p := .Pools}}
+                {{range $i, $p := .Rpools}}
                     {{range $j, $s := .Schemas}}
                         {{range $k, $c := .Collections}}
                             {{range .Datas}}
@@ -326,7 +336,7 @@
         <form id="getSecondary" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
             <label>show value by secondary key</label>
             <select id="getSecKey" name="secondaryKey">
-                {{range $i, $p := .Pools}}
+                {{range $i, $p := .Rpools}}
                     {{range $j, $s := .Schemas}}
                         {{range $k, $c := .Collections}}
                             {{range .Datas}}
@@ -346,7 +356,7 @@
         <form id="getAt" onsubmit="handleSubmit(event, '{{.RecieverURL}}')">
             <label>show value of</label>
             <select id="getAtKey" name="key">
-                {{range $i, $p := .Pools}}
+                {{range $i, $p := .Rpools}}
                     {{range $j, $s := .Schemas}}
                         {{range $k, $c := .Collections}}
                             {{range .Datas}}
@@ -373,7 +383,7 @@
             <input name="secondaryKey" type="text" placeholder="right">
             <label>in</label>
             <select name="collection" id="getRangeCollection">
-                {{range $i, $p := .Pools}}
+                {{range $i, $p := .Rpools}}
                     {{range $j, $s := .Schemas}}
                         {{range .Collections}}
                             <option value="{{$p.Name}}.{{$s.Name}}.{{.Name}}">{{$p.Name}}.{{$s.Name}}.{{.Name}}</option>
@@ -395,7 +405,7 @@
             <input name="secondaryKey" type="text" placeholder="right">
             <label>in</label>
             <select name="collection" id="getRangeSecondaryCollection">
-                {{range $i, $p := .Pools}}
+                {{range $i, $p := .Rpools}}
                     {{range $j, $s := .Schemas}}
                         {{range .Collections}}
                             <option value="{{$p.Name}}.{{$s.Name}}.{{.Name}}">{{$p.Name}}.{{$s.Name}}.{{.Name}}</option>

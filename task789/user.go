@@ -11,18 +11,18 @@ import (
 )
 
 type user struct {
-	login  string
+	Login  string
+	Role   string
 	pass   string
-	role   string
 	access []string
 }
 
 type logins struct {
-	list map[string]user
+	List map[string]user
 	mu   *sync.Mutex
 }
 
-var users = logins{list: make(map[string]user), mu: &sync.Mutex{}}
+var users = logins{List: make(map[string]user), mu: &sync.Mutex{}}
 
 func loadLogins() string {
 	users.mu.Lock()
@@ -49,8 +49,8 @@ func loadLogins() string {
 		if splitted[2] != "superuser" && splitted[2] != "admin" && splitted[2] != "editor" && splitted[2] != "user" {
 			return "error"
 		}
-		newUser := user{login: splitted[0], pass: splitted[1], role: splitted[2], access: strings.Split(splitted[3], ";")}
-		users.list[newUser.login] = newUser
+		newUser := user{Login: splitted[0], pass: splitted[1], Role: splitted[2], access: strings.Split(splitted[3], ";")}
+		users.List[newUser.Login] = newUser
 	}
 
 	return "ok"
@@ -60,7 +60,7 @@ func (l *logins) checkLogin(login, password string) (bool, string) {
 	users.mu.Lock()
 	defer users.mu.Unlock()
 
-	user, ok := l.list[login]
+	user, ok := l.List[login]
 	if !ok {
 		return false, "not a user"
 	}
@@ -75,7 +75,7 @@ func (u *user) checkPass(password string) bool {
 }
 
 func (u *user) checkRole(role string) bool {
-	return u.role == role
+	return u.Role == role
 }
 
 func (u *user) checkPoolAccess(p string) (bool, string) {
@@ -127,47 +127,20 @@ func (u *user) checkCollectionAccess(psc string) (bool, string) {
 	return false, "ok"
 }
 
-func blocks(username string) string {
-	u, ok := users.list[username]
-	if !ok {
-		return "blocks_notuser.html"
-	}
-	ok, _ = users.checkLogin(u.login, u.pass)
-	if !ok {
-		return "blocks_notuser.html"
-	}
-	return "blocks_notuser.html"
-}
-
 func isLoggedIn(w http.ResponseWriter, r *http.Request) (bool, string, string) {
 	_, erruser := r.Cookie("currentUser")
 	_, errpassword := r.Cookie("currentPassword")
 
 	if erruser != nil {
-		cookie := &http.Cookie{
-			Name:   "currentUser",
-			Value:  "",
-			MaxAge: 604800,
-		}
-		http.SetCookie(w, cookie)
+		updateCookie(w, "currentUser", "", 604800)
 
 		if errpassword != nil {
-			cookie = &http.Cookie{
-				Name:   "currentPassword",
-				Value:  "",
-				MaxAge: 604800,
-			}
-			http.SetCookie(w, cookie)
+			updateCookie(w, "currentPassword", "", 604800)
 		}
 		return false, "", "ok"
 	} else {
 		if errpassword != nil {
-			cookie := &http.Cookie{
-				Name:   "currentPassword",
-				Value:  "",
-				MaxAge: 604800,
-			}
-			http.SetCookie(w, cookie)
+			updateCookie(w, "currentPassword", "", 604800)
 			return false, "", "ok"
 		}
 	}
@@ -184,7 +157,7 @@ func login(w http.ResponseWriter, username, pass string) bool {
 	users.mu.Lock()
 	defer users.mu.Unlock()
 
-	user, ok := users.list[username]
+	user, ok := users.List[username]
 	if !ok {
 		return false
 	}
@@ -193,18 +166,8 @@ func login(w http.ResponseWriter, username, pass string) bool {
 		return false
 	}
 
-	cookie := &http.Cookie{
-		Name:   "currentUser",
-		Value:  username,
-		MaxAge: 604800,
-	}
-	http.SetCookie(w, cookie)
-	cookie = &http.Cookie{
-		Name:   "currentPassword",
-		Value:  password,
-		MaxAge: 604800,
-	}
-	http.SetCookie(w, cookie)
+	updateCookie(w, "currentUser", username, 604800)
+	updateCookie(w, "currentPassword", password, 604800)
 	return true
 }
 
@@ -214,28 +177,111 @@ func register(w http.ResponseWriter, username, pass string) string {
 
 	password := hashPassword(pass)
 
-	if _, ok := users.list[username]; ok {
+	if _, ok := users.List[username]; ok {
 		return "username is already taken"
 	}
-	newUser := user{login: username, pass: password, role: "user", access: []string{"none"}}
-	users.list[username] = newUser
+	newUser := user{Login: username, pass: password, Role: "user", access: []string{"none"}}
+	users.List[username] = newUser
+
+	updateCookie(w, "currentUser", username, 604800)
+	updateCookie(w, "currentPassword", password, 604800)
 
 	file, err := os.OpenFile("task789/logins.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		file, err := os.Create("task789/logins.txt")
-		if err != nil {
-			return "server error"
-		}
-		defer file.Close()
-
-		for _, user := range users.list {
-			file.WriteString(user.login + " " + user.pass + " " + user.role + " " + strings.Join(user.access, ";") + "\n")
-		}
-		return "ok"
+		return overrideFile()
 	}
 	defer file.Close()
 	file.WriteString(username + " " + password + " " + "user" + " " + strings.Join(newUser.access, ";") + "\n")
 	return "ok"
+}
+
+func updatePassword(w http.ResponseWriter, username, pass string) string {
+	users.mu.Lock()
+	defer users.mu.Unlock()
+
+	u, ok := users.List[username]
+	if !ok {
+		return "not a user"
+	}
+
+	password := hashPassword(pass)
+
+	newUser := user{Login: u.Login, pass: password, Role: u.Role, access: u.access}
+	users.List[u.Login] = newUser
+	updateCookie(w, "currentPassword", password, 604800)
+
+	overrideFile()
+
+	return "ok"
+}
+
+func updateRole(w http.ResponseWriter, username, role string) string {
+	users.mu.Lock()
+	defer users.mu.Unlock()
+
+	u, ok := users.List[username]
+	if !ok {
+		return "not a user"
+	}
+
+	newUser := user{Login: u.Login, pass: u.pass, Role: role, access: u.access}
+	users.List[u.Login] = newUser
+
+	overrideFile()
+
+	return "ok"
+}
+
+func updateAccess(w http.ResponseWriter, username, access, read, write string) string {
+	users.mu.Lock()
+	defer users.mu.Unlock()
+
+	u, ok := users.List[username]
+	if !ok {
+		return "not a user"
+	}
+
+	accessLine := access
+
+	switch read + write {
+	case "truetrue", "falsetrue":
+		accessLine += "/w"
+	case "truefalse":
+		accessLine += "/r"
+	case "falsefalse":
+		accessLine = ""
+	}
+
+	acc := &u.access
+
+	for i, a := range *acc {
+		if len(a) >= len(access) && a[:len(access)] == access {
+			if accessLine == "" {
+				*acc = append((*acc)[:i], (*acc)[i+1:]...)
+			} else {
+				(*acc)[i] = accessLine
+			}
+			overrideFile()
+			return "ok"
+		}
+	}
+
+	if accessLine != "" {
+		*acc = append(*acc, accessLine)
+		overrideFile()
+		return "ok"
+	}
+
+	return "ok"
+}
+
+func updateCookie(w http.ResponseWriter, cookieName, newVal string, expTime int) {
+	cookie := &http.Cookie{
+		Name:   cookieName,
+		Value:  newVal,
+		MaxAge: expTime,
+	}
+	http.SetCookie(w, cookie)
 }
 
 func logout(w http.ResponseWriter) {
@@ -258,4 +304,23 @@ func hashPassword(original string) string {
 	hasher.Write([]byte(original))
 	hashed := hasher.Sum(nil)
 	return hex.EncodeToString(hashed)
+}
+
+func overrideFile() string {
+	file, err := os.Create("task789/logins.txt")
+	if err != nil {
+		return "server error"
+	}
+	defer file.Close()
+
+	for _, user := range users.List {
+		file.WriteString(user.Login + " " + user.pass + " " + user.Role + " " + strings.Join(user.access, ";") + "\n")
+	}
+	return "ok"
+}
+
+func deleteUser(username string) {
+	delete(users.List, username)
+
+	overrideFile()
 }
