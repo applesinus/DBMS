@@ -78,52 +78,74 @@ func (u *user) checkRole(role string) bool {
 	return u.Role == role
 }
 
-func (u *user) checkPoolAccess(p string) (bool, string) {
+func (u *user) checkPoolAccess(p, op string) (bool, string) {
 	words := strings.Split(p, ".")
 	if len(words) != 1 {
 		return false, "invalid pool name"
 	}
 	for _, pool := range u.access {
-		if pool == words[0] {
-			return true, "ok"
+		if len(pool) > len(words[0]) && pool[:len(words[0])] == words[0] {
+			if op == "w" && pool[len(pool)-1] == 'w' {
+				return true, "ok"
+			} else if op == "r" && (pool[len(pool)-1] == 'w' || pool[len(pool)-1] == 'r') {
+				return true, "ok"
+			}
 		}
 	}
 	return false, "ok"
 }
 
-func (u *user) checkSchemaAccess(ps string) (bool, string) {
+func (u *user) checkSchemaAccess(ps, op string) (bool, string) {
 	words := strings.Split(ps, ".")
 	if len(words) != 2 {
 		return false, "invalid schema name"
 	}
-	_, res := u.checkPoolAccess(words[0])
+
+	for _, schema := range u.access {
+		if len(schema) > len(words[0]) && schema[:len(words[0])] == words[0] {
+			if op == "w" && schema[len(schema)-1] == 'w' {
+				return true, "ok"
+			} else if op == "r" && (schema[len(schema)-1] == 'w' || schema[len(schema)-1] == 'r') {
+				return true, "ok"
+			}
+		}
+	}
+
+	ok, res := u.checkPoolAccess(words[0], op)
 	if res != "ok" {
 		return false, res
 	}
-
-	for _, schema := range u.access {
-		if schema == words[1] {
-			return true, "ok"
-		}
+	if ok {
+		return true, "ok"
 	}
+
 	return false, "ok"
 }
 
-func (u *user) checkCollectionAccess(psc string) (bool, string) {
+func (u *user) checkCollectionAccess(psc, op string) (bool, string) {
 	words := strings.Split(psc, ".")
 	if len(words) != 3 {
 		return false, "invalid collection name"
 	}
-	_, res := u.checkSchemaAccess(words[0] + "." + words[1])
+
+	for _, collection := range u.access {
+		if len(collection) > len(words[0]) && collection[:len(words[0])] == words[0] {
+			if op == "w" && collection[len(collection)-1] == 'w' {
+				return true, "ok"
+			} else if op == "r" && (collection[len(collection)-1] == 'w' || collection[len(collection)-1] == 'r') {
+				return true, "ok"
+			}
+		}
+	}
+
+	ok, res := u.checkSchemaAccess(words[0]+"."+words[1], op)
 	if res != "ok" {
 		return false, res
 	}
-
-	for _, collection := range u.access {
-		if collection == words[2] {
-			return true, "ok"
-		}
+	if ok {
+		return true, "ok"
 	}
+
 	return false, "ok"
 }
 

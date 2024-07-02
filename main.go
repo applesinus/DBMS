@@ -52,7 +52,6 @@ func executeCommand(db *task0.Database, settings map[string]string, command stri
 		}
 		return res
 	}
-
 }
 
 func executeFile(db *task0.Database, settings map[string]string, filePath string) string {
@@ -62,7 +61,7 @@ func executeFile(db *task0.Database, settings map[string]string, filePath string
 		for scanner.Scan() {
 			command := scanner.Text()
 			ret := executeCommand(db, settings, command)
-			fmt.Printf("command: %v, ret: %v\n", command, ret)
+			//fmt.Printf("command: %v, ret: %v\n", command, ret)
 			if ret == "exit" {
 				return "exit"
 			} else if ret == "error" {
